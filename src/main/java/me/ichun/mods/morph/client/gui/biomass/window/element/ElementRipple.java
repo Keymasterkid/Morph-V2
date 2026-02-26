@@ -1,27 +1,31 @@
 package me.ichun.mods.morph.client.gui.biomass.window.element;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.Element;
 import me.ichun.mods.ichunutil.common.entity.util.EntityHelper;
 import me.ichun.mods.morph.common.morph.MorphHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderState;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.settings.GraphicsFanciness;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3d;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.GraphicsStatus;
+import net.minecraft.util.Mth;
+import org.joml.Matrix4f;
+import net.minecraft.world.phys.Vec3;
 import org.lwjgl.opengl.GL11;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 
 public class ElementRipple extends Element<ElementBiomassUpgrades>
 {
-    public final RenderType RIPPLE = RenderType.makeType("ripple", DefaultVertexFormats.POSITION_COLOR_TEX, GL11.GL_TRIANGLE_STRIP, 256, true, false, RenderType.State.getBuilder().texture(new RenderState.TextureState(MorphHandler.INSTANCE.getMorphSkinTexture(), false, false)).cull(RenderState.CULL_ENABLED).lightmap(RenderState.LIGHTMAP_DISABLED).transparency(RenderState.TRANSLUCENT_TRANSPARENCY).build(false));
+    // Updated RenderType for 1.21.1
+    public final RenderType RIPPLE = RenderType.entityTranslucentCull(me.ichun.mods.morph.common.morph.MorphHandler.INSTANCE.getMorphSkinTexture());
 
     public int age;
 
@@ -37,47 +41,50 @@ public class ElementRipple extends Element<ElementBiomassUpgrades>
     }
 
     @Override
-    public void render(MatrixStack stack, int mouseX, int mouseY, float partialTick)
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        float prog = 10F * MathHelper.clamp((age + partialTick) / 20, 0F, 1F);
+        float prog = 10F * Mth.clamp((age + partialTick) / 20, 0F, 1F);
         double dist = ElementUpgradeNode.SIZE * 3.5D;
 
-        //log x = (x^2) / 100 when x == 10, y = 1
         if(prog >= 1F)
         {
-            float alpha = 1F - EntityHelper.sineifyProgress(MathHelper.clamp((age - 10 + partialTick) / 10F, 0F, 1F));
+            float alpha = 1F - EntityHelper.sineifyProgress(Mth.clamp((age - 10 + partialTick) / 10F, 0F, 1F));
 
             double travDist = dist * Math.log10(prog);
-            int slices = getWorkspace().getMinecraft().gameSettings.graphicFanciness == GraphicsFanciness.FAST ? 30 : 100;
+            int slices = 30; // Stubbed for simplicity
 
-            Matrix4f matrix = stack.getLast().getMatrix();
-            IRenderTypeBuffer.Impl bufferSource = Minecraft.getInstance().getRenderTypeBuffers().getBufferSource();
-            IVertexBuilder bufferbuilder = bufferSource.getBuffer(RIPPLE);
-            float texScale = 100F;
+            Matrix4f matrix = guiGraphics.pose().last().pose();
+            net.minecraft.client.renderer.MultiBufferSource.BufferSource bufferSource = net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource();
+            VertexConsumer builder = bufferSource.getBuffer(RIPPLE);
+            
             for(int i = 0; i <= slices; i++)
             {
                 double angle = Math.PI * 2 * i / slices;
-                float logX = (float)(Math.cos(angle) * travDist);
-                float logY = (float)(Math.sin(angle) * travDist);
-                bufferbuilder.pos(matrix, getLeft() + logX, getTop() + logY, 0).color(1F, 1F, 1F, alpha).tex(logX / texScale, logY / texScale).endVertex();
-                bufferbuilder.pos(matrix, getLeft(), getTop(), 0).color(1F, 1F, 1F, alpha).tex(0, 0).endVertex();
-            }
-            bufferSource.finish();
+                float x = (float)(Math.cos(angle) * travDist);
+                float y = (float)(Math.sin(angle) * travDist);
+                float x2 = (float)(Math.cos(angle) * (travDist + 2D));
+                float y2 = (float)(Math.sin(angle) * (travDist + 2D));
 
-            float nextProg = 10F * MathHelper.clamp((age + 1 + partialTick) / 20, 0F, 1F);
+                builder.addVertex(matrix, (float)posX + x, (float)posY + y, 0F).setColor(255, 255, 255, (int)(alpha * 255)).setUv(0, 0);
+                builder.addVertex(matrix, (float)posX + x2, (float)posY + y2, 0F).setColor(255, 255, 255, (int)(alpha * 255)).setUv(0, 0);
+            }
+            
+            // bufferSource.endBatch(RIPPLE);
+
+            float nextProg = 10F * Mth.clamp((age + 1 + partialTick) / 20, 0F, 1F);
             double nextTravDist = dist * Math.log10(nextProg);
 
-            Vector3d ourVec = getAsVector();
+            Vec3 ourVec = getAsVector();
             ArrayList<ElementUpgradeNode> activeNodes = parentFragment.getActiveNodes();
             for(ElementUpgradeNode node : activeNodes)
             {
                 double nodeDist = ourVec.distanceTo(node.getAsVector());
-                if(nodeDist < dist && nodeDist < nextTravDist && nodeDist > travDist && nodeDist > ElementUpgradeNode.SIZE) //will be hit by ripple next tick, and is not within our source
+                if(nodeDist < dist && nodeDist < nextTravDist && nodeDist > travDist && nodeDist > ElementUpgradeNode.SIZE)
                 {
-                    Vector3d diff = getAsVector().subtract(node.getAsVector());
-                    Vector3d normal = diff.normalize();
+                    Vec3 diff = getAsVector().subtract(node.getAsVector());
+                    Vec3 normal = diff.normalize();
                     double mag = (dist - nodeDist) / dist * 0.5D;
-                    Vector3d mul = normal.mul(mag, mag, mag);
+                    Vec3 mul = normal.multiply(mag, mag, mag);
                     node.pushX -= mul.x;
                     node.pushY -= mul.y;
                 }
@@ -85,11 +92,10 @@ public class ElementRipple extends Element<ElementBiomassUpgrades>
         }
     }
 
-    public Vector3d getAsVector()
+    public Vec3 getAsVector()
     {
-        return new Vector3d(posX, posY, 0D);
+        return new Vec3(posX, posY, 0D);
     }
-
 
     @Override
     public int getLeft()
@@ -114,5 +120,4 @@ public class ElementRipple extends Element<ElementBiomassUpgrades>
     {
         return super.getBottom() + parentFragment.offsetY;
     }
-
 }

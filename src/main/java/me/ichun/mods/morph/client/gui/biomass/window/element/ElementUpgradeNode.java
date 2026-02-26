@@ -1,20 +1,22 @@
 package me.ichun.mods.morph.client.gui.biomass.window.element;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.Element;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.ElementToggleTextured;
 import me.ichun.mods.ichunutil.common.entity.util.EntityHelper;
 import me.ichun.mods.morph.api.biomass.BiomassUpgrade;
 import me.ichun.mods.morph.api.biomass.BiomassUpgradeInfo;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.RenderState;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.Vector3d;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.util.Mth;
+import org.joml.Matrix4f;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.gui.GuiGraphics;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -25,8 +27,15 @@ import java.util.function.Consumer;
 
 public class ElementUpgradeNode extends ElementToggleTextured<ElementUpgradeNode>
 {
-    public static final RenderType MORPH_LINES = RenderType.makeType("morph_lines", DefaultVertexFormats.POSITION_COLOR, 1, 256, RenderType.State.getBuilder().line(new RenderState.LineState(OptionalDouble.of(4D))).texture(RenderState.NO_TEXTURE).transparency(RenderState.TRANSLUCENT_TRANSPARENCY).writeMask(RenderState.COLOR_DEPTH_WRITE).build(false));
-    //TODO FINAL this
+    // Updated RenderType for 1.21.1
+    public static final RenderType MORPH_LINES = RenderType.create("morph_lines", DefaultVertexFormat.POSITION_COLOR, com.mojang.blaze3d.vertex.VertexFormat.Mode.LINES, 256, false, false, 
+        RenderType.CompositeState.builder()
+            .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(4.0D)))
+            .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+            .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
+            .setShaderState(RenderType.POSITION_COLOR_SHADER)
+            .createCompositeState(false));
+
     public static int SIZE = 16;
     public static int TOLERANCE_MIN = 2 * SIZE;
     public static int TOLERANCE_MAX = 4 * SIZE;
@@ -66,7 +75,7 @@ public class ElementUpgradeNode extends ElementToggleTextured<ElementUpgradeNode
     {
         for(ElementUpgradeNode childNode : childNodes)
         {
-            rand.setSeed(Math.abs(childNode.upgradeInfo.id.hashCode() + Minecraft.getInstance().getSession().getPlayerID().hashCode()) * 42069L); //Blame Harogna for haha funny number
+            rand.setSeed(Math.abs(childNode.upgradeInfo.id.hashCode() + net.minecraft.client.Minecraft.getInstance().getUser().getProfileId().hashCode()) * 42069L); //Blame Harogna for haha funny number
             childNode.setPos(posX + rand.nextInt(SIZE * 4), posY + rand.nextInt(SIZE * 4));
             childNode.allocateChildPlacements(rand);
         }
@@ -126,26 +135,26 @@ public class ElementUpgradeNode extends ElementToggleTextured<ElementUpgradeNode
                 continue;
             }
 
-            Vector3d diff = getAsVector().subtract(node.getAsVector());
-            if(diff.equals(Vector3d.ZERO))
+            Vec3 diff = getAsVector().subtract(node.getAsVector());
+            if(diff.equals(Vec3.ZERO))
             {
-                diff = new Vector3d(parent.rand.nextGaussian() * 3D, parent.rand.nextGaussian() * 3D, 0D); //add some difference
+                diff = new Vec3(parent.rand.nextGaussian() * 3D, parent.rand.nextGaussian() * 3D, 0D); //add some difference
             }
             double dist = diff.length();
             if(dist < TOLERANCE_MIN) //TODO adapt to number of children per node?? more children = higher tolerance?
             {
-                Vector3d normal = diff.normalize();
+                Vec3 normal = diff.normalize();
                 double mag = (TOLERANCE_MIN - dist) / TOLERANCE_MIN * 0.1D;
-                Vector3d mul = normal.mul(mag, mag, mag);
+                Vec3 mul = normal.multiply(mag, mag, mag);
 
                 pushX += mul.x;
                 pushY += mul.y;
             }
             else if(node == parentNode && dist > TOLERANCE_MAX)
             {
-                Vector3d normal = diff.normalize();
+                Vec3 normal = diff.normalize();
                 double mag = (TOLERANCE_MAX - dist) / TOLERANCE_MAX * 0.1D;
-                Vector3d mul = normal.mul(mag, mag, mag);
+                Vec3 mul = normal.multiply(mag, mag, mag);
 
                 pushX += mul.x;
                 pushY += mul.y;
@@ -153,36 +162,36 @@ public class ElementUpgradeNode extends ElementToggleTextured<ElementUpgradeNode
         }
     }
 
-    public Vector3d getAsVector()
+    public Vec3 getAsVector()
     {
-        return new Vector3d(getCenterX(), getCenterY(), 0D);
+        return new Vec3(getCenterX(), getCenterY(), 0D);
     }
 
-    public void renderLines(MatrixStack stack, float partialTick)
+    public void renderLines(GuiGraphics guiGraphics, float partialTick)
     {
         if(parentNode != null)
         {
-            float prog = EntityHelper.sineifyProgress(MathHelper.clamp((showTime + partialTick) / 10, 0F, 1F));
+            float prog = EntityHelper.sineifyProgress(Mth.clamp((showTime + partialTick) / 10, 0F, 1F));
             if(prog > 0F)
             {
-                IRenderTypeBuffer.Impl bufferSource = Minecraft.getInstance().getRenderTypeBuffers().getBufferSource();
-                IVertexBuilder builder = bufferSource.getBuffer(MORPH_LINES);
-                Matrix4f matrix = stack.getLast().getMatrix();
+                net.minecraft.client.renderer.MultiBufferSource.BufferSource bufferSource = net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource();
+                VertexConsumer builder = bufferSource.getBuffer(MORPH_LINES);
+                Matrix4f matrix = guiGraphics.pose().last().pose();
                 float parX = parentNode.getLeft() + parentNode.width / 2F;
                 float parY = parentNode.getTop() + parentNode.height / 2F;
                 float diffX = (getLeft() + width / 2F) - parX;
                 float diffY = (getTop() + height / 2F) - parY;
-                builder.pos(matrix, parX, parY, 0F).color(255, 255, 255, 200).endVertex();
-                builder.pos(matrix, parX + diffX * prog, parY + diffY * prog, 0F).color(255, 255, 255, 120).endVertex();
-                bufferSource.finish();
+                builder.addVertex(matrix, parX, parY, 0F).setColor(255, 255, 255, 200);
+                builder.addVertex(matrix, parX + diffX * prog, parY + diffY * prog, 0F).setColor(255, 255, 255, 120);
+                // bufferSource.endBatch(MORPH_LINES); // should not end batch here, let GuiGraphics handle it or end it later
             }
         }
     }
 
     @Override
-    public void render(MatrixStack stack, int mouseX, int mouseY, float partialTick)
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        float prog = EntityHelper.sineifyProgress(MathHelper.clamp((showTime + partialTick) / 10, 0F, 1F));
+        float prog = EntityHelper.sineifyProgress(Mth.clamp((showTime + partialTick) / 10, 0F, 1F));
         if(prog > 0F)
         {
             float curSize = SIZE * prog;
@@ -198,7 +207,7 @@ public class ElementUpgradeNode extends ElementToggleTextured<ElementUpgradeNode
                 width = (int)curSize;
                 height = (int)curSize;
 
-                super.render(stack, mouseX, mouseY, partialTick);
+                super.render(guiGraphics, mouseX, mouseY, partialTick);
 
                 //TODO renders for if can afford or maxed etc
 

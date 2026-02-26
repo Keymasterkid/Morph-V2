@@ -1,42 +1,41 @@
 package me.ichun.mods.morph.client.render;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import me.ichun.mods.morph.client.entity.EntityBiomassAbility;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.morph.MorphHandler;
 import me.ichun.mods.morph.common.morph.MorphInfoImpl;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
-import net.minecraft.client.renderer.culling.ClippingHelper;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.settings.PointOfView;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.client.registry.IRenderFactory;
+import net.minecraft.client.CameraType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class RenderEntityBiomassAbility extends EntityRenderer<EntityBiomassAbility>
 {
-    protected RenderEntityBiomassAbility(EntityRendererManager renderManager)
+    public RenderEntityBiomassAbility(EntityRendererProvider.Context context)
     {
-        super(renderManager);
-        shadowSize = 0.0F;
+        super(context);
+        shadowRadius = 0.0F;
     }
 
     @Override
-    public void render(EntityBiomassAbility ability, float entityYaw, float partialTick, MatrixStack stack, IRenderTypeBuffer buffer, int light)
+    public void render(EntityBiomassAbility ability, float entityYaw, float partialTick, PoseStack stack, MultiBufferSource buffer, int light)
     {
-        if(ability.player.removed)
+        if(ability.player.isRemoved())
         {
             return; //no render
         }
 
         MorphInfoImpl info = (MorphInfoImpl)MorphHandler.INSTANCE.getMorphInfo(ability.player);
-        boolean isFirstPerson = ability.player == Minecraft.getInstance().getRenderViewEntity() && Minecraft.getInstance().gameSettings.getPointOfView() == PointOfView.FIRST_PERSON;
+        boolean isFirstPerson = ability.player == Minecraft.getInstance().cameraEntity && Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON;
         if(isFirstPerson)
         {
             if(info.entityBiomassAbility == null || info.entityBiomassAbility.getSkinAlpha(partialTick) < ability.getSkinAlpha(partialTick))
@@ -49,20 +48,20 @@ public class RenderEntityBiomassAbility extends EntityRenderer<EntityBiomassAbil
         LivingEntity activeLiving = info.getActiveAppearanceEntity(partialTick);
         if(activeLiving != null)
         {
-            EntityRenderer<? super LivingEntity> renderer = renderManager.getRenderer(activeLiving);
+            EntityRenderer<? super LivingEntity> renderer = this.entityRenderDispatcher.getRenderer(activeLiving);
             if(renderer != null)
             {
                 float alpha = ability.getSkinAlpha(partialTick);
 
                 MorphRenderHandler.denyRenderNameplate = true;
-                stack.push();
-                MorphRenderHandler.renderLiving(renderer, activeLiving, stack, buffer, renderManager.getPackedLight(activeLiving, partialTick), partialTick);
-                stack.pop();
+                stack.pushPose();
+                MorphRenderHandler.renderLiving(renderer, activeLiving, stack, buffer, this.entityRenderDispatcher.getPackedLightCoords(activeLiving, partialTick), partialTick);
+                stack.popPose();
 
                 MorphRenderHandler.currentCapture = ability.capture;
                 MorphRenderHandler.currentCapture.infos.clear();
 
-                MorphRenderHandler.renderLiving(renderer, activeLiving, new MatrixStack(), buffer, renderManager.getPackedLight(activeLiving, partialTick), partialTick, Morph.configServer.biomassSkinWhilstInvisible);
+                MorphRenderHandler.renderLiving(renderer, activeLiving, new PoseStack(), buffer, this.entityRenderDispatcher.getPackedLightCoords(activeLiving, partialTick), partialTick, Morph.configServer.biomassSkinWhilstInvisible);
 
                 MorphRenderHandler.currentCapture = null;
                 MorphRenderHandler.denyRenderNameplate = false;
@@ -73,24 +72,24 @@ public class RenderEntityBiomassAbility extends EntityRenderer<EntityBiomassAbil
     }
 
     @Override
-    public boolean shouldRender(EntityBiomassAbility ability, ClippingHelper camera, double camX, double camY, double camZ)
+    public boolean shouldRender(EntityBiomassAbility ability, Frustum camera, double camX, double camY, double camZ)
     {
         ability.syncWithOriginPosition();
         return super.shouldRender(ability, camera, camX, camY, camZ);
     }
 
     @Override
-    public ResourceLocation getEntityTexture(EntityBiomassAbility ability)
+    public ResourceLocation getTextureLocation(EntityBiomassAbility ability)
     {
         return MorphHandler.INSTANCE.getMorphSkinTexture();
     }
 
-    public static class RenderFactory implements IRenderFactory<EntityBiomassAbility>
+    public static class RenderFactory implements EntityRendererProvider<EntityBiomassAbility>
     {
         @Override
-        public EntityRenderer<? super EntityBiomassAbility> createRenderFor(EntityRendererManager manager)
+        public EntityRenderer<EntityBiomassAbility> create(EntityRendererProvider.Context context)
         {
-            return new RenderEntityBiomassAbility(manager);
+            return new RenderEntityBiomassAbility(context);
         }
     }
 }

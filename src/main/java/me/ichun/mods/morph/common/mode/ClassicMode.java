@@ -10,10 +10,10 @@ import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.mob.MobDataHandler;
 import me.ichun.mods.morph.common.morph.MorphHandler;
 import me.ichun.mods.morph.common.morph.save.PlayerMorphData;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.common.NeoForge;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -21,7 +21,7 @@ import java.util.ArrayList;
 public class ClassicMode implements MorphMode
 {
     @Override
-    public void handleMurderEvent(ServerPlayerEntity player, LivingEntity living)
+    public void handleMurderEvent(ServerPlayer player, LivingEntity living)
     {
         if(canMorph(player))
         {
@@ -36,13 +36,13 @@ public class ClassicMode implements MorphMode
     }
 
     @Override
-    public boolean canShowMorphSelector(PlayerEntity player)
+    public boolean canShowMorphSelector(Player player)
     {
         return MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.selectorFilterType, Morph.configServer.selectorFilterNames);
     }
 
     @Override
-    public boolean canMorph(PlayerEntity player)
+    public boolean canMorph(Player player)
     {
         if(!MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.morphFilterType, Morph.configServer.morphFilterNames))
         {
@@ -61,9 +61,9 @@ public class ClassicMode implements MorphMode
     }
 
     @Override
-    public boolean canAcquireMorph(PlayerEntity player, LivingEntity living, @Nullable MorphVariant variant) //variant should be the MorphVariant of the EntityLiving we're trying to acquire
+    public boolean canAcquireMorph(Player player, LivingEntity living, @Nullable MorphVariant variant) //variant should be the MorphVariant of the EntityLiving we're trying to acquire
     {
-        if(variant == null || MinecraftForge.EVENT_BUS.post(new MorphEvent.CanAcquire(player, variant)) || !MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.morphFilterType, Morph.configServer.morphFilterNames))
+        if(variant == null || net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new MorphEvent.CanAcquire(player, variant)).isCanceled() || !MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.morphFilterType, Morph.configServer.morphFilterNames))
         {
             return false;
         }
@@ -74,13 +74,13 @@ public class ClassicMode implements MorphMode
     }
 
     @Override
-    public int getMorphingDuration(PlayerEntity player)
+    public int getMorphingDuration(Player player)
     {
         return Morph.configServer.morphTime;
     }
 
     @Override
-    public ArrayList<Trait<?>> getTraitsForVariant(PlayerEntity player, MorphVariant variant)
+    public ArrayList<Trait<?>> getTraitsForVariant(Player player, MorphVariant variant)
     {
         ArrayList<Trait<?>> traits = new ArrayList<>();
 
@@ -117,25 +117,25 @@ public class ClassicMode implements MorphMode
     }
 
     @Override
-    public boolean canUseAbility(PlayerEntity player, Ability<?> ability)
+    public boolean canUseAbility(Player player, Ability<?> ability)
     {
         return true;
     }
 
     @Override
-    public boolean hasUnlockedBiomass(PlayerEntity player)
+    public boolean hasUnlockedBiomass(Player player)
     {
         return false;
     }
 
     @Override
-    public boolean canAcquireBiomass(PlayerEntity player, LivingEntity living)
+    public boolean canAcquireBiomass(Player player, LivingEntity living)
     {
         return false; // no biomass capabilities in classic.
     }
 
     @Override
-    public double getBiomassAmount(PlayerEntity player, LivingEntity living)
+    public double getBiomassAmount(Player player, LivingEntity living)
     {
         return 0D; // no biomass capabilities in classic.
     }

@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[34,)" #forge version dep
+loaderVersion="[4,)" #neoforge version dep
 license="GNU Lesser General Public License v3.0"
 issueTrackerURL="https://github.com/iChun/Morph/issues"
 
@@ -13,9 +13,4 @@ issueTrackerURL="https://github.com/iChun/Morph/issues"
     Kill other entities and take their form.
     '''
 
-[[dependencies.morph]]
-    modId="ichunutil"
-    mandatory=true
-    versionRange="[10.7.0,11)"
-    ordering="NONE"
-    side="BOTH"
+

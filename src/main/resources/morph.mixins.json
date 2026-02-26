@@ -2,7 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "me.ichun.mods.morph.mixin",
-  "compatibilityLevel": "JAVA_8",
+  "compatibilityLevel": "JAVA_21",
   "refmap": "morph.refmap.json",
   "mixins": [
     "AbstractHorseEntityInvokerMixin",
@@ -11,7 +11,9 @@
     "LivingEntityInvokerMixin",
     "LivingEntityMixin",
     "LlamaEntityInvokerMixin",
-    "PlayerEntityMixin"
+    "ModelPartAccessor",
+    "PlayerEntityMixin",
+    "PoseAccessor"
   ],
   "client": [
     "ForgeIngameGuiMixin",

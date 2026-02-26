@@ -2,12 +2,12 @@ package me.ichun.mods.morph.client.core;
 
 import me.ichun.mods.ichunutil.client.key.KeyBind;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.client.settings.KeyModifier;
+import net.minecraft.client.KeyMapping;
+import com.mojang.blaze3d.platform.InputConstants;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyModifier;
 import org.lwjgl.glfw.GLFW;
 
 @OnlyIn(Dist.CLIENT)
@@ -23,14 +23,14 @@ public final class KeyBinds
 
     public static void init()
     {
-        keySelectorUp = new KeyBind(new KeyBinding("morph.key.selectorUp", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_LEFT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
-        keySelectorDown = new KeyBind(new KeyBinding("morph.key.selectorDown", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_RIGHT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
-        keySelectorLeft = new KeyBind(new KeyBinding("morph.key.selectorLeft", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_LEFT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
-        keySelectorRight = new KeyBind(new KeyBinding("morph.key.selectorRight", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_RIGHT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
-        keyFavourite = new KeyBind(new KeyBinding("morph.key.favourite", KeyConflictContext.IN_GAME, InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_GRAVE_ACCENT), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, true));
+        keySelectorUp = new KeyBind(new KeyMapping("morph.key.selectorUp", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_LEFT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
+        keySelectorDown = new KeyBind(new KeyMapping("morph.key.selectorDown", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_RIGHT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
+        keySelectorLeft = new KeyBind(new KeyMapping("morph.key.selectorLeft", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_LEFT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
+        keySelectorRight = new KeyBind(new KeyMapping("morph.key.selectorRight", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_RIGHT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
+        keyFavourite = new KeyBind(new KeyMapping("morph.key.favourite", KeyConflictContext.IN_GAME, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_GRAVE_ACCENT), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, true));
         //Too many questions asking why it's "disabled"
-//        keyAbility = new KeyBind(new KeyBinding("morph.key.ability", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_B), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, true));
-//        keyBiomass = new KeyBind(new KeyBinding("morph.key.biomass", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_B), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null);
+//        keyAbility = new KeyBind(new KeyMapping("morph.key.ability", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrMakeInput(com.mojang.blaze3d.platform.InputConstants.KEY_B), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, true));
+//        keyBiomass = new KeyBind(new KeyMapping("morph.key.biomass", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrMakeInput(com.mojang.blaze3d.platform.InputConstants.KEY_B), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null);
     }
 
 }

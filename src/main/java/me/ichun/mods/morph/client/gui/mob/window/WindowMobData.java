@@ -19,18 +19,20 @@ import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.mob.MobDataHandler;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.StringTextComponent;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.Util;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.ChatFormatting;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.apache.commons.io.FileUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
@@ -89,7 +91,7 @@ public class WindowMobData extends Window<WorkspaceMobData>
                     if(Screen.hasShiftDown())
                     {
                         Path dir = ResourceHandler.getMorphDir().resolve("export");
-                        Util.getOSType().openFile(dir.toFile());
+                        net.minecraft.Util.getPlatform().openUri(dir.toUri());
                     }
                     parent.parent.closeScreen();
                 }
@@ -106,11 +108,11 @@ public class WindowMobData extends Window<WorkspaceMobData>
                     {
                         dir = ResourceHandler.getMorphDir();
                     }
-                    Util.getOSType().openFile(dir.toFile());
+                    net.minecraft.Util.getPlatform().openUri(dir.toUri());
                 }
                 else
                 {
-                    WindowPopup.popup(parent.parent, 0.7D, 190, null, I18n.format("morph.gui.workspace.mobData.help"));
+                    WindowPopup.popup(parent.parent, 0.7D, 190, null, I18n.get("morph.gui.workspace.mobData.help"));
                 }
             });
             buttonHelp.setSize(20, 20);
@@ -118,8 +120,8 @@ public class WindowMobData extends Window<WorkspaceMobData>
             elements.add(buttonHelp);
 
             ElementTextWrapper textClass = new ElementTextWrapper(this);
-            textClass.setNoWrap().setText(I18n.format("morph.gui.workspace.mobData.morphs"));
-            textClass.setColor(TextFormatting.AQUA.getColor());
+            textClass.setNoWrap().setText(I18n.get("morph.gui.workspace.mobData.morphs"));
+            textClass.setColor(ChatFormatting.AQUA.getColor());
             textClass.constraints().left(this, Constraint.Property.Type.LEFT, padding - 1).top(this, Constraint.Property.Type.TOP, padding);
             elements.add(textClass);
 
@@ -136,18 +138,18 @@ public class WindowMobData extends Window<WorkspaceMobData>
             {
                 for(MorphVariant morph : Morph.eventHandlerClient.morphData.morphs)
                 {
-                    if(!morph.id.equals(EntityType.PLAYER.getRegistryName()) && morph.hasVariants())
+                    if(!morph.id.equals(ResourceLocation.fromNamespaceAndPath("minecraft", "player")) && morph.hasVariants())
                     {
                         ElementList.Item<MorphVariant> item = listMorphs.addItem(morph);
 
                         MorphVariant renderVariant = morph.getAsVariant(morph.variants.get(0));
-                        EntityType<?> value = ForgeRegistries.ENTITIES.getValue(renderVariant.id);
-                        String key = value != null ? value.getTranslationKey() : "morph.morph.type.unknown";
+                        EntityType<?> value = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(renderVariant.id);
+                        String key = value != null ? value.getDescriptionId() : "morph.morph.type.unknown";
                         ElementRenderEntity rend = new ElementRenderEntity(item, 0.5F);
                         rend.setSize(40, 40);
                         rend.setConstraint(Constraint.matchParent(rend, item, 4).bottom(null, Constraint.Property.Type.BOTTOM, 0));
-                        rend.setTooltip(I18n.format(key));
-                        rend.setEntityToRender(renderVariant.createEntityInstance(Minecraft.getInstance().world, (PlayerEntity)null));
+                        rend.setTooltip(I18n.get(key));
+                        rend.setEntityToRender(renderVariant.createEntityInstance(net.minecraft.client.Minecraft.getInstance().level, (Player)null));
                         item.addElement(rend);
 
                         item.setSelectionHandler(theItem -> {
@@ -183,14 +185,14 @@ public class WindowMobData extends Window<WorkspaceMobData>
             elements.add(listTraits);
 
             ElementTextWrapper textTraits = new ElementTextWrapper(this);
-            textTraits.setNoWrap().setText(I18n.format("morph.gui.workspace.mobData.traits"));
+            textTraits.setNoWrap().setText(I18n.get("morph.gui.workspace.mobData.traits"));
             textTraits.constraints().left(listTraits, Constraint.Property.Type.LEFT, 0).bottom(listTraits, Constraint.Property.Type.TOP, 0);
             elements.add(textTraits);
 
             ElementTextWrapper textMorphId = new ElementTextWrapper(this);
             textMorphId.setId("textMorphId");
-            textMorphId.setColor(TextFormatting.AQUA.getColor());
-            textMorphId.setNoWrap().setText(I18n.format("morph.gui.workspace.mobData.selectAMorph"));
+            textMorphId.setColor(ChatFormatting.AQUA.getColor());
+            textMorphId.setNoWrap().setText(I18n.get("morph.gui.workspace.mobData.selectAMorph"));
             textMorphId.constraints().left(listTraits, Constraint.Property.Type.LEFT, 0).top(textClass, Constraint.Property.Type.TOP, 0);
             elements.add(textMorphId);
 
@@ -250,36 +252,37 @@ public class WindowMobData extends Window<WorkspaceMobData>
 
             ElementTextWrapper textInfo = new ElementTextWrapper(this);
             textInfo.setId("textInfo");
-            textInfo.setNoWrap().setText(I18n.format("morph.gui.workspace.mobData.additionalTraitInfo"));
+            textInfo.setNoWrap().setText(I18n.get("morph.gui.workspace.mobData.additionalTraitInfo"));
             textInfo.constraints().left(listTraitInfo, Constraint.Property.Type.LEFT, 0).bottom(listTraitInfo, Constraint.Property.Type.TOP, 0);
             elements.add(textInfo);
         }
 
         public void updateTraitsList()
         {
-            EntityType<?> value = ForgeRegistries.ENTITIES.getValue(new ResourceLocation(selectedMobData.forEntity));
-            String key = value != null ? value.getTranslationKey() : "morph.morph.type.unknown";
+            String morphId = selectedMobData != null ? selectedMobData.forEntity : "minecraft:pig";
+            EntityType<?> value = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(morphId));
+            String key = value != null ? value.getDescriptionId() : "morph.morph.type.unknown";
 
-            ((ElementTextWrapper)getById("textMorphId")).setText(I18n.format(key));
+            ((ElementTextWrapper)getById("textMorphId")).setText(I18n.get(key));
 
             listTraits.items.clear();
-            listTraits.setListener(null);
+            listTraits.setFocused(null);
 
             selectedMobData.traits.sort(null);
 
             for(Trait<?> trait : selectedMobData.traits)
             {
                 ElementList.Item<? extends Trait<?>> item = listTraits.addItem(trait);
-                String name = I18n.format(trait.getTranslationKeyRoot() + ".name");
+                String name = I18n.get(trait.getTranslationKeyRoot() + ".name");
                 if(name.equals(trait.getTranslationKeyRoot() + ".name"))
                 {
                     name = trait.type;
                 }
                 item.addTextWrapper(name);
 
-                String tooltip = I18n.format("morph.gui.workspace.mobData.type", trait.type);
+                String tooltip = I18n.get("morph.gui.workspace.mobData.type", trait.type);
 
-                String desc = I18n.format(trait.getTranslationKeyRoot() + ".desc");
+                String desc = I18n.get(trait.getTranslationKeyRoot() + ".desc");
                 if(!desc.equals(trait.getTranslationKeyRoot() + ".desc"))
                 {
                     tooltip = tooltip + "\n\n" + desc;
@@ -312,14 +315,14 @@ public class WindowMobData extends Window<WorkspaceMobData>
         public void updateTraitInfoList(Trait<?> trait)
         {
             listTraitInfo.items.clear();
-            listTraitInfo.setListener(null);
+            listTraitInfo.setFocused(null);
             textFieldDesc.setText(" ");
             textFieldDesc.constraint.bottom(this, Constraint.Property.Type.BOTTOM, 12);
             ((ElementTextWrapper)getById("textInfo")).setText("");
 
             if(trait != null)
             {
-                ((ElementTextWrapper)getById("textInfo")).setText(I18n.format(trait.getTranslationKeyRoot() + ".name"));
+                ((ElementTextWrapper)getById("textInfo")).setText(I18n.get(trait.getTranslationKeyRoot() + ".name"));
 
                 Field[] fields = trait.getClass().getDeclaredFields();
                 for(Field f : fields)
@@ -334,7 +337,7 @@ public class WindowMobData extends Window<WorkspaceMobData>
                     ElementList.Item<Field> fItem = listTraitInfo.addItem(f).addTextWrapper("");
                     updateItemName(fItem, trait, f);
                     fItem.setSelectionHandler(fieldItem -> {
-                        String desc = I18n.format(trait.getTranslationKeyRoot() + "." + f.getName() + ".desc");
+                        String desc = I18n.get(trait.getTranslationKeyRoot() + "." + f.getName() + ".desc");
                         if(fieldItem.selected && !desc.equals(trait.getTranslationKeyRoot() + "." + f.getName() + ".desc"))
                         {
                             textFieldDesc.setText(desc);
@@ -414,19 +417,19 @@ public class WindowMobData extends Window<WorkspaceMobData>
 
         public void updateItemName(ElementList.Item<Field> item, Trait<?> trait, Field f)
         {
-            String name = I18n.format(trait.getTranslationKeyRoot() + "." + f.getName() + ".name");
+            String name = I18n.get(trait.getTranslationKeyRoot() + "." + f.getName() + ".name");
             if(name.equals(trait.getTranslationKeyRoot() + "." + f.getName() + ".name"))
             {
                 name = f.getName();
             }
-            StringTextComponent text = new StringTextComponent(TextFormatting.GOLD + name);
+            Component text = Component.literal(ChatFormatting.GOLD + name);
             String fhName = "";
             try
             {
                 Object o = f.get(trait);
                 if(o == null)
                 {
-                    fhName = TextFormatting.GRAY + "null";
+                    fhName = ChatFormatting.GRAY + "null";
                 }
                 else
                 {
@@ -434,9 +437,9 @@ public class WindowMobData extends Window<WorkspaceMobData>
                 }
             }
             catch(IllegalAccessException ignored){}
-            text.appendSibling(new StringTextComponent(TextFormatting.RESET + ": " + fhName + TextFormatting.RESET));
+            MutableComponent extendedText = text.copy().append(Component.literal(ChatFormatting.RESET + ": " + fhName + ChatFormatting.RESET));
 
-            ((ElementTextWrapper)item.elements.get(0)).setText(text.getString());
+            ((ElementTextWrapper)item.elements.get(0)).setText(extendedText.getString());
             item.init();
         }
 
@@ -455,7 +458,8 @@ public class WindowMobData extends Window<WorkspaceMobData>
                     Files.createDirectory(dir);
                 }
 
-                ResourceLocation rl = new ResourceLocation(selectedMobData.forEntity);
+                String morphId = selectedMobData.forEntity;
+                ResourceLocation rl = ResourceLocation.parse(morphId);
 
                 if(!rl.getNamespace().equals("minecraft"))
                 {
@@ -466,9 +470,9 @@ public class WindowMobData extends Window<WorkspaceMobData>
                     }
                 }
 
-                if(!Minecraft.getInstance().getSession().getUsername().equals("Dev"))
+                if(!net.minecraft.client.Minecraft.getInstance().getUser().getName().equals("Dev"))
                 {
-                    selectedMobData.author = Minecraft.getInstance().getSession().getUsername();
+                    selectedMobData.author = net.minecraft.client.Minecraft.getInstance().getUser().getName();
                 }
 
                 String name = capitaliseWords(rl.getPath(), false);

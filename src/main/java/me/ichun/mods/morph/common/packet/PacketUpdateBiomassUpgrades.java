@@ -3,9 +3,9 @@ package me.ichun.mods.morph.common.packet;
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
 import me.ichun.mods.morph.api.biomass.BiomassUpgrade;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+// NetworkEvent removed - use IPayload pattern in 1.21
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,30 +22,30 @@ public class PacketUpdateBiomassUpgrades extends AbstractPacket
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
         buf.writeInt(upgrades.size());
 
         for(BiomassUpgrade upgrade : upgrades)
         {
-            buf.writeCompoundTag(upgrade.write(new CompoundNBT()));
+            buf.writeNbt(upgrade.write(new CompoundTag()));
         }
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
         upgrades = new ArrayList<>();
 
         int count = buf.readInt();
         for(int i = 0; i < count; i++)
         {
-            upgrades.add(BiomassUpgrade.createFromNBT(buf.readCompoundTag()));
+            upgrades.add(BiomassUpgrade.createFromNBT(buf.readNbt()));
         }
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         context.enqueueWork(() -> {
             Morph.eventHandlerClient.morphData.upgrades = upgrades;

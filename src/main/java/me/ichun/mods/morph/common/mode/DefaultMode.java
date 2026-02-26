@@ -12,10 +12,10 @@ import me.ichun.mods.morph.common.biomass.Upgrades;
 import me.ichun.mods.morph.common.mob.MobDataHandler;
 import me.ichun.mods.morph.common.morph.MorphHandler;
 import me.ichun.mods.morph.common.morph.save.PlayerMorphData;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.neoforge.common.NeoForge;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 public class DefaultMode implements MorphMode
 {
     @Override
-    public void handleMurderEvent(ServerPlayerEntity player, LivingEntity living)
+    public void handleMurderEvent(ServerPlayer player, LivingEntity living)
     {
         //TODO the actual method that isn't a debug function
         if(canMorph(player))
@@ -73,13 +73,13 @@ public class DefaultMode implements MorphMode
     }
 
     @Override
-    public boolean canShowMorphSelector(PlayerEntity player)
+    public boolean canShowMorphSelector(Player player)
     {
         return MorphHandler.INSTANCE.getBiomassUpgrade(player, Upgrades.ID_MORPH_ABILITY) != null && MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.selectorFilterType, Morph.configServer.selectorFilterNames);
     }
 
     @Override
-    public boolean canMorph(PlayerEntity player)
+    public boolean canMorph(Player player)
     {
         if(!MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.morphFilterType, Morph.configServer.morphFilterNames))
         {
@@ -98,9 +98,9 @@ public class DefaultMode implements MorphMode
     }
 
     @Override
-    public boolean canAcquireMorph(PlayerEntity player, LivingEntity living, @Nullable MorphVariant variant)
+    public boolean canAcquireMorph(Player player, LivingEntity living, @Nullable MorphVariant variant)
     {
-        if(variant == null || MinecraftForge.EVENT_BUS.post(new MorphEvent.CanAcquire(player, variant)) || !MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.morphFilterType, Morph.configServer.morphFilterNames))
+        if(variant == null || net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new MorphEvent.CanAcquire(player, variant)).isCanceled() || !MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.morphFilterType, Morph.configServer.morphFilterNames))
         {
             return false;
         }
@@ -111,37 +111,42 @@ public class DefaultMode implements MorphMode
     }
 
     @Override
-    public int getMorphingDuration(PlayerEntity player)
+    public int getMorphingDuration(Player player)
     {
         return Morph.configServer.morphTime;
     }
 
     @Override
-    public ArrayList<Trait<?>> getTraitsForVariant(PlayerEntity player, MorphVariant variant)
+    public ArrayList<Trait<?>> getTraitsForVariant(Player player, MorphVariant variant)
     {
         //TODO this
         return new ArrayList<>();
     }
 
     @Override
-    public boolean canUseAbility(PlayerEntity player, Ability<?> ability)
+    public boolean canUseAbility(Player player, Ability<?> ability)
     {
         return true; //TODO calculate the biomass cost
     }
 
     //BIOMASS STUFF BELOW THIS LINE
     @Override
-    public boolean hasUnlockedBiomass(PlayerEntity player)
+    public boolean hasUnlockedBiomass(Player player)
     {
-        return (Morph.configServer.biomassBypassAdvancement || EntityHelper.hasCompletedAdvancement(Morph.Advancements.UNLOCK_BIOMASS, player)) && MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.biomassFilterType, Morph.configServer.biomassFilterNames);
+        return (Morph.configServer.biomassBypassAdvancement || (player instanceof ServerPlayer && hasCompletedAdvancement((ServerPlayer)player))) && MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.biomassFilterType, Morph.configServer.biomassFilterNames);
+    }
+    
+    private boolean hasCompletedAdvancement(ServerPlayer player) {
+        net.minecraft.advancements.AdvancementHolder adv = player.getServer().getAdvancements().get(Morph.Advancements.UNLOCK_BIOMASS);
+        return adv != null && player.getAdvancements().getOrStartProgress(adv).isDone();
     }
 
     @Override
-    public boolean canAcquireBiomass(PlayerEntity player, LivingEntity living)
+    public boolean canAcquireBiomass(Player player, LivingEntity living)
     {
         for(Pattern p : Morph.configServer.disabledMobsID)
         {
-            Matcher m = p.matcher(living.getType().getRegistryName().toString());
+            Matcher m = p.matcher(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(living.getType()).toString());
             if(m.matches())
             {
                 return false;
@@ -161,7 +166,7 @@ public class DefaultMode implements MorphMode
     }
 
     @Override
-    public double getBiomassAmount(PlayerEntity player, LivingEntity living)
+    public double getBiomassAmount(Player player, LivingEntity living)
     {
         //Get the player's efficiency level
         double playerEfficiency = MorphHandler.INSTANCE.getBiomassUpgradeValue(player, Upgrades.ID_BIOMASS_EFFICIENCY);
@@ -179,7 +184,7 @@ public class DefaultMode implements MorphMode
         //Biomass: 194.4 kg (* 0.3, default config)
 
         //Calculate the volume & weight of the entity
-        double volume = living.getWidth() * living.getWidth() * living.getHeight();
+        double volume = living.getBbWidth() * living.getBbWidth() * living.getBbHeight();
         double weight = 1000D * volume;
 
         MobData data = MobDataHandler.getMobData(living);

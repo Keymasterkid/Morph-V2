@@ -1,4 +1,5 @@
 package me.ichun.mods.morph.client.config;
+import me.ichun.mods.morph.client.render.InteractionHandHandler;
 
 import me.ichun.mods.ichunutil.client.gui.bns.window.WindowPopup;
 import me.ichun.mods.ichunutil.client.gui.bns.window.constraint.Constraint;
@@ -6,12 +7,12 @@ import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.*;
 import me.ichun.mods.ichunutil.common.config.ConfigBase;
 import me.ichun.mods.ichunutil.common.config.annotations.CategoryDivider;
 import me.ichun.mods.ichunutil.common.config.annotations.Prop;
-import me.ichun.mods.morph.client.render.hand.HandHandler;
+// HandHandler import removed - class missing
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
-import net.minecraft.client.resources.I18n;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.minecraft.client.resources.language.I18n;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.config.ModConfig;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class ConfigClient extends ConfigBase
     @Prop(min = 0, max = 100)
     public int acquisitionTendrilPartOpacity = 5;
 
-    public boolean morphAllowHandOverride = true;
+    public boolean morphAllowInteractionHandOverride = true;
 
     public boolean morphDisableRidingPlayerRenderInFirstPerson = true;
 
@@ -69,14 +70,14 @@ public class ConfigClient extends ConfigBase
                         {
                             continue;
                         }
-                        element.parentFragment.setListener(element);
+                        element.parentFragment.setFocused(element);
                         element.mouseClicked(element.getLeft() + element.getWidth() / 2D, element.getTop() + element.getHeight() / 2D, 0);
                         element.mouseReleased(element.getLeft() + element.getWidth() / 2D, element.getTop() + element.getHeight() / 2D, 0);
                         break;
                     }
                 }
             });
-            ElementTextWrapper wrapper = new ElementTextWrapper(item).setText(I18n.format("config.morph.resources.reload.desc"));
+            ElementTextWrapper wrapper = new ElementTextWrapper(item).setText(I18n.get("config.morph.resources.reload.desc"));
             wrapper.setConstraint(new Constraint(wrapper).left(item, Constraint.Property.Type.LEFT, 3).right(item, Constraint.Property.Type.RIGHT, 90));
             wrapper.setTooltip(value.desc);
             item.addElement(wrapper);
@@ -87,9 +88,9 @@ public class ConfigClient extends ConfigBase
             ElementButton<?> button = new ElementButton<>(item, "config.morph.resources.reload.btn", btn ->
             {
                 ResourceHandler.reloadAllResources();
-                WindowPopup.popup(item.getWorkspace(), 0.6D, 0.6D, null, I18n.format("config.morph.resources.reload.success"));
+                WindowPopup.popup(item.getWorkspace(), 0.6D, 0.6D, null, I18n.get("config.morph.resources.reload.success"));
             });
-            button.setTooltip(I18n.format("config.morph.resources.reload.reextract.desc"));
+            button.setTooltip(I18n.get("config.morph.resources.reload.reextract.desc"));
             button.setSize(80, 14);
             button.setConstraint(new Constraint(button).top(item, Constraint.Property.Type.TOP, 3).bottom(item, Constraint.Property.Type.BOTTOM, 3).right(item, Constraint.Property.Type.RIGHT, 8));
             item.addElement(button);
@@ -100,14 +101,14 @@ public class ConfigClient extends ConfigBase
                 {
                     ResourceHandler.extractFiles(ResourceHandler.getMorphDir().resolve(ResourceHandler.MOB_SUPPORT_VERSION + ".extracted"));
                     ResourceHandler.reloadAllResources();
-                    WindowPopup.popup(item.getWorkspace(), 0.6D, 0.6D, null, I18n.format("config.morph.resources.reload.success"));
+                    WindowPopup.popup(item.getWorkspace(), 0.6D, 0.6D, null, I18n.get("config.morph.resources.reload.success"));
                 }
                 catch(IOException e)
                 {
                     e.printStackTrace();
                 }
             });
-            button1.setTooltip(I18n.format("config.morph.resources.reload.reextract.desc"));
+            button1.setTooltip(I18n.get("config.morph.resources.reload.reextract.desc"));
             button1.setSize(80, 14);
             button1.setConstraint(new Constraint(button1).top(item, Constraint.Property.Type.TOP, 3).bottom(item, Constraint.Property.Type.BOTTOM, 3).right(button, Constraint.Property.Type.LEFT, 4));
             item.addElement(button1);
@@ -121,7 +122,7 @@ public class ConfigClient extends ConfigBase
     @Override
     public void onConfigLoaded()
     {
-        HandHandler.setState(morphAllowHandOverride);
+        InteractionHandHandler.setState(morphAllowInteractionHandOverride);
     }
 
     @Nonnull

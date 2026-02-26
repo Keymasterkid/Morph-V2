@@ -2,55 +2,55 @@ package me.ichun.mods.morph.common.packet;
 
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
 import me.ichun.mods.morph.common.morph.MorphHandler;
-import net.minecraft.client.Minecraft;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 
 public class PacketMorphInfo extends AbstractPacket
 {
     public int entId;
-    public CompoundNBT nbt;
+    public CompoundTag nbt;
 
     public PacketMorphInfo(){}
 
-    public PacketMorphInfo(int id, CompoundNBT nbt)
+    public PacketMorphInfo(int id, CompoundTag nbt)
     {
         this.entId = id;
         this.nbt = nbt;
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
         buf.writeInt(entId);
-        buf.writeCompoundTag(nbt);
+        buf.writeNbt(nbt);
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
         entId = buf.readInt();
-        nbt = buf.readCompoundTag();
+        nbt = buf.readNbt();
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
-        context.enqueueWork(this::handleClient);
+        if (context.flow().isClientbound()) {
+            context.enqueueWork(this::handleClient);
+        }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public void handleClient()
+    private void handleClient()
     {
-        Entity entity = Minecraft.getInstance().world.getEntityByID(entId);
-        if(entity instanceof PlayerEntity && !entity.removed) // we use capabilities, if the entity is removed, then caps will error
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.level == null) return;
+        
+        Entity entity = mc.level.getEntity(entId);
+        if(entity instanceof Player && !entity.isRemoved()) // we use capabilities, if the entity is removed, then caps will error
         {
-            MorphHandler.INSTANCE.getMorphInfo((PlayerEntity)entity).read(nbt);
+            MorphHandler.INSTANCE.getMorphInfo((Player)entity).read(nbt);
         }
     }
 }

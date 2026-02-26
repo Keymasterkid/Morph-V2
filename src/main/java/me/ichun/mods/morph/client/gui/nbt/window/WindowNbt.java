@@ -16,17 +16,18 @@ import me.ichun.mods.morph.common.morph.MorphHandler;
 import me.ichun.mods.morph.common.morph.nbt.NbtHandler;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
+import net.minecraft.Util;
+// Component.literal is a static method, use Component.literal() directly
 import org.apache.commons.io.FileUtils;
 
 import javax.annotation.Nonnull;
@@ -64,7 +65,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
         public NbtModifier parentModifier;
         public NbtModifier targetModifier;
 
-        public CompoundNBT targetTag;
+        public CompoundTag targetTag;
 
         public ElementList<?> listClass;
         public ElementList<?> listKeys;
@@ -97,12 +98,12 @@ public class WindowNbt extends Window<WorkspaceNbt>
             elements.add(rendEnt);
 
             ElementTextWrapper textModEnt = new ElementTextWrapper(this);
-            textModEnt.setNoWrap().setText(I18n.format("morph.gui.workspace.nbt.asMorphEntity"));
+            textModEnt.setNoWrap().setText(I18n.get("morph.gui.workspace.nbt.asMorphEntity"));
             textModEnt.constraints().left(rendModEnt, Constraint.Property.Type.LEFT, -1).bottom(rendModEnt, Constraint.Property.Type.TOP, 0).right(rendModEnt, Constraint.Property.Type.RIGHT, 0);
             elements.add(textModEnt);
 
             ElementTextWrapper textEnt = new ElementTextWrapper(this);
-            textEnt.setNoWrap().setText(I18n.format("morph.gui.workspace.nbt.targetEntity"));
+            textEnt.setNoWrap().setText(I18n.get("morph.gui.workspace.nbt.targetEntity"));
             textEnt.constraints().left(rendEnt, Constraint.Property.Type.LEFT, -1).bottom(rendEnt, Constraint.Property.Type.TOP, 0).right(rendEnt, Constraint.Property.Type.RIGHT, 0);
             elements.add(textEnt);
 
@@ -119,7 +120,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
                     if(Screen.hasShiftDown())
                     {
                         Path dir = ResourceHandler.getMorphDir().resolve("export");
-                        Util.getOSType().openFile(dir.toFile());
+                        Util.getPlatform().openUri(dir.toUri());
                     }
                     parent.parent.closeScreen();
                 }
@@ -136,11 +137,11 @@ public class WindowNbt extends Window<WorkspaceNbt>
                     {
                         dir = ResourceHandler.getMorphDir();
                     }
-                    Util.getOSType().openFile(dir.toFile());
+                    Util.getPlatform().openUri(dir.toUri());
                 }
                 else
                 {
-                    WindowPopup.popup(parent.parent, 0.7D, 190, null, I18n.format("morph.gui.workspace.nbt.help"));
+                    WindowPopup.popup(parent.parent, 0.7D, 190, null, I18n.get("morph.gui.workspace.nbt.help"));
                 }
             });
             buttonHelp.setSize(20, 20);
@@ -148,7 +149,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
             elements.add(buttonHelp);
 
             ElementTextWrapper textClass = new ElementTextWrapper(this);
-            textClass.setNoWrap().setText(I18n.format("morph.gui.workspace.nbt.forClass"));
+            textClass.setNoWrap().setText(I18n.get("morph.gui.workspace.nbt.forClass"));
             textClass.constraints().left(this, Constraint.Property.Type.LEFT, padding - 1).top(textModEnt, Constraint.Property.Type.TOP, 0);
             elements.add(textClass);
 
@@ -168,7 +169,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
                 if(clz == target.getClass())
                 {
                     item.selected = true;
-                    listClass.setListener(item);
+                    listClass.setFocused(item);
                 }
                 ElementTextWrapper text = (ElementTextWrapper)item.elements.get(0);
                 text.setTooltip(clz.getName());
@@ -188,18 +189,18 @@ public class WindowNbt extends Window<WorkspaceNbt>
             elements.add(listKeys);
 
             ElementTextWrapper textKeys = new ElementTextWrapper(this);
-            textKeys.setNoWrap().setText(I18n.format("morph.gui.workspace.nbt.nbtKeys"));
+            textKeys.setNoWrap().setText(I18n.get("morph.gui.workspace.nbt.nbtKeys"));
             textKeys.constraints().left(listKeys, Constraint.Property.Type.LEFT, -1).bottom(listKeys, Constraint.Property.Type.TOP, -1);
             elements.add(textKeys);
 
             //Add the modifier editors
             ElementTextWrapper textKeep = new ElementTextWrapper(this);
-            textKeep.setNoWrap().setText(I18n.format("morph.gui.workspace.nbt.keep"));
-            textKeep.setTooltip(I18n.format("morph.gui.workspace.nbt.keep.tooltip"));
+            textKeep.setNoWrap().setText(I18n.get("morph.gui.workspace.nbt.keep"));
+            textKeep.setTooltip(I18n.get("morph.gui.workspace.nbt.keep.tooltip"));
             textKeep.constraints().left(rendEnt, Constraint.Property.Type.LEFT, 1).top(rendEnt, Constraint.Property.Type.BOTTOM, padding);
             elements.add(textKeep);
 
-            ElementCheckbox<?> checkKeep = new ElementCheckbox<>(this, I18n.format("morph.gui.workspace.nbt.keep.tooltip"), c -> {
+            ElementCheckbox<?> checkKeep = new ElementCheckbox<>(this, I18n.get("morph.gui.workspace.nbt.keep.tooltip"), c -> {
                 if(!c.toggleState && !((ElementTextField)getById("fieldValue")).getText().isEmpty())
                 {
                     c.toggleState = true;
@@ -211,12 +212,12 @@ public class WindowNbt extends Window<WorkspaceNbt>
             elements.add(checkKeep);
 
             ElementTextWrapper textRemove = new ElementTextWrapper(this);
-            textRemove.setNoWrap().setText(I18n.format("morph.gui.workspace.nbt.forceRemove"));
-            textRemove.setTooltip(I18n.format("morph.gui.workspace.nbt.forceRemove.tooltip"));
+            textRemove.setNoWrap().setText(I18n.get("morph.gui.workspace.nbt.forceRemove"));
+            textRemove.setTooltip(I18n.get("morph.gui.workspace.nbt.forceRemove.tooltip"));
             textRemove.constraints().left(checkKeep, Constraint.Property.Type.RIGHT, padding).top(textKeep, Constraint.Property.Type.TOP, 0);
             elements.add(textRemove);
 
-            ElementCheckbox<?> checkRemove = new ElementCheckbox<>(this, I18n.format("morph.gui.workspace.nbt.forceRemove.tooltip"), c -> {
+            ElementCheckbox<?> checkRemove = new ElementCheckbox<>(this, I18n.get("morph.gui.workspace.nbt.forceRemove.tooltip"), c -> {
                 if(c.toggleState)
                 {
                     ElementCheckbox<?> keep = getById("checkKeep");
@@ -231,37 +232,37 @@ public class WindowNbt extends Window<WorkspaceNbt>
             elements.add(checkRemove);
 
             ElementTextWrapper textValue = new ElementTextWrapper(this);
-            textValue.setNoWrap().setText(I18n.format("morph.gui.workspace.nbt.forceValue"));
-            textValue.setTooltip(I18n.format("morph.gui.workspace.nbt.forceValue.tooltip"));
+            textValue.setNoWrap().setText(I18n.get("morph.gui.workspace.nbt.forceValue"));
+            textValue.setTooltip(I18n.get("morph.gui.workspace.nbt.forceValue.tooltip"));
             textValue.constraints().left(textKeep, Constraint.Property.Type.LEFT, 0).top(textKeep, Constraint.Property.Type.BOTTOM, 4);
             elements.add(textValue);
 
             Consumer<String> responder = (s) -> setModifierFields();
 
             ElementTextField fieldValue = new ElementTextField(this);
-            fieldValue.setTooltip(I18n.format("morph.gui.workspace.nbt.forceValue.tooltip"));
+            fieldValue.setTooltip(I18n.get("morph.gui.workspace.nbt.forceValue.tooltip"));
             fieldValue.setId("fieldValue");
             fieldValue.setResponder(responder).setEnterResponder(responder);
             fieldValue.constraints().left(textValue, Constraint.Property.Type.LEFT, 0).top(textValue, Constraint.Property.Type.BOTTOM, 0).right(rendModEnt, Constraint.Property.Type.RIGHT, 0);
             elements.add(fieldValue);
 
             ElementTextWrapper textMod = new ElementTextWrapper(this);
-            textMod.setNoWrap().setText(I18n.format("morph.gui.workspace.nbt.modRequired"));
-            textMod.setTooltip(I18n.format("morph.gui.workspace.nbt.modRequired.tooltip"));
+            textMod.setNoWrap().setText(I18n.get("morph.gui.workspace.nbt.modRequired"));
+            textMod.setTooltip(I18n.get("morph.gui.workspace.nbt.modRequired.tooltip"));
             textMod.constraints().left(textValue, Constraint.Property.Type.LEFT, 0).top(fieldValue, Constraint.Property.Type.BOTTOM, 4);
             elements.add(textMod);
 
             ElementTextField fieldMod = new ElementTextField(this);
-            fieldMod.setTooltip(I18n.format("morph.gui.workspace.nbt.modRequired.tooltip"));
+            fieldMod.setTooltip(I18n.get("morph.gui.workspace.nbt.modRequired.tooltip"));
             fieldMod.setId("fieldMod");
             fieldMod.setResponder(responder).setEnterResponder(responder);
             fieldMod.constraints().left(textValue, Constraint.Property.Type.LEFT, 0).top(textMod, Constraint.Property.Type.BOTTOM, 0).right(rendModEnt, Constraint.Property.Type.RIGHT, 0);
             elements.add(fieldMod);
 
 
-            targetTag = new CompoundNBT();
+            targetTag = new CompoundTag();
             MorphVariant.writeDefaults(target, targetTag);
-            target.writeAdditional(targetTag);
+            target.addAdditionalSaveData(targetTag);
 
             //Add keys
             addModifierKeys(targetModifier, listKeys);
@@ -302,13 +303,13 @@ public class WindowNbt extends Window<WorkspaceNbt>
             addModifierInfo(modifiers, targetTag, elementList, null, 0);
         }
 
-        public void addModifierInfo(LinkedHashMap<String, ArrayList<NbtModifier.Modifier>> modifiers, CompoundNBT tag, ElementList<?> list, ModifierInfo parentInfo, int depth)
+        public void addModifierInfo(LinkedHashMap<String, ArrayList<NbtModifier.Modifier>> modifiers, CompoundTag tag, ElementList<?> list, ModifierInfo parentInfo, int depth)
         {
-            for(Map.Entry<String, INBT> e : tag.tagMap.entrySet())
+            for(String key : tag.getAllKeys())
             {
+                Tag eTag = tag.get(key);
                 //Look for a modifier for this key
                 boolean handledElsewhere = true;
-                String key = e.getKey();
                 ModifierInfo info = null;
                 for(Map.Entry<String, ArrayList<NbtModifier.Modifier>> me : modifiers.entrySet())
                 {
@@ -318,7 +319,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
                     {
                         if(key.equals(modifier.key)) // we found the key
                         {
-                            info = new ModifierInfo(parentInfo, key, e.getValue(), new ModifierInfo.Info(mod, modifier, handledElsewhere));
+                            info = new ModifierInfo(parentInfo, key, eTag, new ModifierInfo.Info(mod, modifier, handledElsewhere));
                         }
                         else if("PARENT_BREAK".equals(modifier.key) && modifier.key.equals(modifier.value))
                         {
@@ -331,7 +332,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
                 //if info is null, we haven't found a modifier for this.
                 if(info == null)
                 {
-                    info = new ModifierInfo(parentInfo, e.getKey(), e.getValue(), new ModifierInfo.Info(null, null, false));
+                    info = new ModifierInfo(parentInfo, key, eTag, new ModifierInfo.Info(null, null, false));
                 }
 
                 if(parentInfo != null)
@@ -344,16 +345,16 @@ public class WindowNbt extends Window<WorkspaceNbt>
                 {
                     prefix.append("- ");
                 }
-                list.addItem(info).addTextWrapper(prefix + e.getKey()).setSelectionHandler(this::updateModifierInputs);
+                list.addItem(info).addTextWrapper(prefix + key).setSelectionHandler(this::updateModifierInputs);
 
-                if(e.getValue() instanceof CompoundNBT)
+                if(eTag instanceof CompoundTag)
                 {
                     LinkedHashMap<String, ArrayList<NbtModifier.Modifier>> babyMods = new LinkedHashMap<>();
                     if(info.currentInfo.modifier != null && info.currentInfo.modifier.nestedModifiers != null)
                     {
                         babyMods.put(info.currentInfo.requiredMod == null ? "" : info.currentInfo.requiredMod, info.currentInfo.modifier.nestedModifiers);
                     }
-                    addModifierInfo(babyMods, ((CompoundNBT)e.getValue()), list, info, depth + 1);
+                    addModifierInfo(babyMods, ((CompoundTag)eTag), list, info, depth + 1);
                 }
             }
         }
@@ -442,17 +443,17 @@ public class WindowNbt extends Window<WorkspaceNbt>
                 if(modInfo.currentInfo.modifier == null)
                 {
                     text.setColor(0xaaaaaa);
-                    text.setTooltip(text.getText().get(0) + "\n\n" + I18n.format("morph.gui.workspace.nbt.nbtType") + modInfo.inbt.getType().getName() + "\n\n" + I18n.format("morph.gui.workspace.nbt.stripped"));
+                    text.setTooltip(text.getText().get(0) + "\n\n" + I18n.get("morph.gui.workspace.nbt.nbtType") + modInfo.Tag.getType().getName() + "\n\n" + I18n.get("morph.gui.workspace.nbt.stripped"));
                 }
                 else if(modInfo.currentInfo.handledElsewhere)
                 {
                     text.setColor(0xffff55);
-                    text.setTooltip(text.getText().get(0) + "\n\n" + I18n.format("morph.gui.workspace.nbt.nbtType") + modInfo.inbt.getType().getName() + "\n\n" + I18n.format("morph.gui.workspace.nbt.handledElsewhere"));
+                    text.setTooltip(text.getText().get(0) + "\n\n" + I18n.get("morph.gui.workspace.nbt.nbtType") + modInfo.Tag.getType().getName() + "\n\n" + I18n.get("morph.gui.workspace.nbt.handledElsewhere"));
                 }
                 else
                 {
                     text.setColor(null);
-                    text.setTooltip(text.getText().get(0) + "\n\n" + I18n.format("morph.gui.workspace.nbt.nbtType") + modInfo.inbt.getType().getName() + "\n\n" + I18n.format("morph.gui.workspace.nbt.kept"));
+                    text.setTooltip(text.getText().get(0) + "\n\n" + I18n.get("morph.gui.workspace.nbt.nbtType") + modInfo.Tag.getType().getName() + "\n\n" + I18n.get("morph.gui.workspace.nbt.kept"));
                 }
             }
         }
@@ -472,10 +473,10 @@ public class WindowNbt extends Window<WorkspaceNbt>
 
             if(variant != null)
             {
-                return variant.createEntityInstance(Minecraft.getInstance().player.world, (PlayerEntity)null);
+                return variant.createEntityInstance(net.minecraft.client.Minecraft.getInstance().player.level(), (Player)null);
             }
-            LivingEntity entInstance = EntityType.PIG.create(target.world);
-            entInstance.setCustomName(new StringTextComponent("Invalid Morph Pig"));
+            LivingEntity entInstance = EntityType.PIG.create(target.level());
+            entInstance.setCustomName(Component.literal("Invalid Morph Pig"));
 
             return entInstance;
         }
@@ -639,7 +640,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
                     Files.createDirectory(dir);
                 }
 
-                ResourceLocation rl = rendModEnt.entToRender.getType().getRegistryName();
+                ResourceLocation rl = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(rendModEnt.entToRender.getType());
 
                 if(!rl.getNamespace().equals("minecraft"))
                 {
@@ -662,15 +663,15 @@ public class WindowNbt extends Window<WorkspaceNbt>
 
                 if(clz == null)
                 {
-                    WindowPopup.popup(parentFragment.parent, 0.6D, 180, null, I18n.format("morph.gui.workspace.nbt.classRequired"));
+                    WindowPopup.popup(parentFragment.parent, 0.6D, 180, null, I18n.get("morph.gui.workspace.nbt.classRequired"));
                     return false;
                 }
 
                 NbtModifier modifier = compileModifier();
 
-                if(!Minecraft.getInstance().getSession().getUsername().equals("Dev"))
+                if(!net.minecraft.client.Minecraft.getInstance().getUser().getName().equals("Dev"))
                 {
-                    modifier.author = Minecraft.getInstance().getSession().getUsername();
+                    modifier.author = net.minecraft.client.Minecraft.getInstance().getUser().getName();
                 }
                 modifier.forClass = clz.getName();
 
@@ -694,16 +695,16 @@ public class WindowNbt extends Window<WorkspaceNbt>
             public ModifierInfo parent;
             public ArrayList<ModifierInfo> children;
             public String key;
-            public INBT inbt;
+            public Tag Tag;
             public Info originalInfo;
             public Info currentInfo;
 
-            public ModifierInfo(ModifierInfo parent, String key, INBT inbt, Info info)
+            public ModifierInfo(ModifierInfo parent, String key, Tag Tag, Info info)
             {
                 this.parent = parent;
                 this.children = new ArrayList<>();
                 this.key = key;
-                this.inbt = inbt;
+                this.Tag = Tag;
                 this.originalInfo = info;
                 this.currentInfo = info;
             }

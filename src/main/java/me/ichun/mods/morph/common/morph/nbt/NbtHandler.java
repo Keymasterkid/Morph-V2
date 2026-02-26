@@ -8,9 +8,9 @@ import me.ichun.mods.morph.api.event.MorphLoadResourceEvent;
 import me.ichun.mods.morph.api.mob.nbt.NbtModifier;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.nbt.CompoundTag;
+import net.neoforged.neoforge.common.NeoForge;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -71,7 +71,7 @@ public class NbtHandler
 
         setupInterfaceModifiers();
 
-        MinecraftForge.EVENT_BUS.post(new MorphLoadResourceEvent(MorphLoadResourceEvent.Type.NBT));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new MorphLoadResourceEvent(MorphLoadResourceEvent.Type.NBT));
     }
 
     private static boolean readNbtJson(String json) throws ClassNotFoundException, JsonSyntaxException, IllegalStateException
@@ -221,9 +221,16 @@ public class NbtHandler
         }
     }
 
-    public static void removeEmptyCompoundTags(CompoundNBT tag)
+    public static void removeEmptyCompoundTags(CompoundTag tag)
     {
-        tag.tagMap.entrySet().removeIf(e -> e.getValue() instanceof CompoundNBT && ((CompoundNBT)e.getValue()).tagMap.isEmpty());
-        tag.tagMap.entrySet().stream().filter(e -> e.getValue() instanceof CompoundNBT).forEach(e -> removeEmptyCompoundTags((CompoundNBT)e.getValue()));
+        java.util.List<String> toRemove = new java.util.ArrayList<>();
+        tag.getAllKeys().forEach(k -> {
+            net.minecraft.nbt.Tag val = tag.get(k);
+            if(val instanceof CompoundTag child) {
+                removeEmptyCompoundTags(child);
+                if(child.isEmpty()) toRemove.add(k);
+            }
+        });
+        toRemove.forEach(tag::remove);
     }
 }

@@ -6,7 +6,7 @@ import me.ichun.mods.morph.api.biomass.BiomassUpgradeInfo;
 import me.ichun.mods.morph.api.event.MorphLoadResourceEvent;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -72,6 +72,6 @@ public class BiomassUpgradeHandler
 
         Morph.LOGGER.info("Loaded {} Biomass Upgrade(s)", BIOMASS_UPGRADES.size());
 
-        MinecraftForge.EVENT_BUS.post(new MorphLoadResourceEvent(MorphLoadResourceEvent.Type.BIOMASS));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new MorphLoadResourceEvent(MorphLoadResourceEvent.Type.BIOMASS));
     }
 }

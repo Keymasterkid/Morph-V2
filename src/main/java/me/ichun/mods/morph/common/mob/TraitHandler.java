@@ -5,7 +5,7 @@ import me.ichun.mods.morph.api.mob.trait.*;
 import me.ichun.mods.morph.api.mob.trait.ability.*;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -25,7 +25,7 @@ public class TraitHandler
         m.put("traitUndead", UndeadTrait.class);
 
         //These have fields
-        m.put("traitEffectResistance", EffectResistanceTrait.class);
+        m.put("traitMobEffectResistance", MobEffectResistanceTrait.class);
         m.put("traitImmunityDamageSource", DamageSourceImmunityTrait.class);
         m.put("traitIntimidate", IntimidateTrait.class);
         m.put("traitMoistSkin", MoistSkinTrait.class);
@@ -38,11 +38,15 @@ public class TraitHandler
         m.put("abilityClimb", ClimbAbility.class);
 
         //These have fields
-        m.put("abilityEffectAttack", EffectAttackAbility.class);
+        m.put("abilityMobEffectAttack", MobEffectAttackAbility.class);
+        m.put("abilityEffectAttack", MobEffectAttackAbility.class); //Alias
         m.put("abilityFlight", FlyAbility.class);
         m.put("abilityFlightFlap", FlightFlapAbility.class);
         m.put("abilityRideable", RideableAbility.class);
         m.put("abilitySlowFall", SlowFallAbility.class);
+
+        // Alias for resistance
+        m.put("traitEffectResistance", MobEffectResistanceTrait.class);
     });
 
     public static void registerTrait(String type, Class<? extends Trait> clz)

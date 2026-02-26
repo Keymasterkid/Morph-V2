@@ -1,30 +1,32 @@
 package me.ichun.mods.morph.client.entity;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.vertex.IVertexBuilder;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.ichun.mods.ichunutil.client.render.RenderHelper;
 import me.ichun.mods.ichunutil.client.tracker.ClientEntityTracker;
 import me.ichun.mods.ichunutil.common.entity.util.EntityHelper;
 import me.ichun.mods.morph.client.render.MorphRenderHandler;
 import me.ichun.mods.morph.common.Morph;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.model.ModelRenderer;
-import net.minecraft.client.settings.PointOfView;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.IPacket;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraft.util.math.vector.Vector3f;
-import net.minecraft.world.World;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.network.NetworkHooks;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.CameraType;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
+import net.minecraft.world.level.Level;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+// NetworkHooks removed - use IPayload system
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,14 +47,14 @@ public class EntityAcquisition extends Entity
     public int maxRequiredTendrils;
     public int age;
 
-    public MorphRenderHandler.ModelRendererCapture acquiredCapture = new MorphRenderHandler.ModelRendererCapture();
+    public MorphRenderHandler.ModelPartCapture acquiredCapture = new MorphRenderHandler.ModelPartCapture();
 
-    public EntityAcquisition(EntityType<?> entityTypeIn, World worldIn)
+    public EntityAcquisition(EntityType<?> entityTypeIn, Level levelIn)
     {
-        super(entityTypeIn, worldIn);
+        super(entityTypeIn, levelIn);
         setInvisible(true);
         setInvulnerable(true);
-        setEntityId(ClientEntityTracker.getNextEntId());
+        this.setId(ClientEntityTracker.getNextEntId());
     }
 
     public EntityAcquisition setTargets(@Nonnull LivingEntity origin, @Nonnull LivingEntity acquired, boolean isMorphAcquisition)
@@ -77,27 +79,28 @@ public class EntityAcquisition extends Entity
 
         age++;
 
-        if(!livingOrigin.isAlive() || !livingOrigin.world.getDimensionKey().equals(world.getDimensionKey())) //parent is "dead"
+        if(!livingOrigin.isAlive() || !livingOrigin.level().dimension().equals(this.level().dimension())) //parent is "dead"
         {
-            if(livingOrigin.removed)
+            if(livingOrigin.isRemoved())
             {
-                remove();
+                this.discard();
             }
         }
         else if(age > Morph.configClient.acquisitionTendrilMaxChild * 10 + 100) //probably too long, kill it off
         {
-            remove();
+            this.discard();
 
-            if(livingOrigin instanceof PlayerEntity)
+            if(livingOrigin instanceof Player)
             {
-                EntityBiomassAbility ability = Morph.EntityTypes.BIOMASS_ABILITY.create(world).setInfo((PlayerEntity)livingOrigin, 10, 0);
-                ((ClientWorld)world).addEntity(ability.getEntityId(), ability);
+                // EntityBiomassAbility ability = Morph.EntityTypes.BIOMASS_ABILITY.create(this.level()).setInfo((Player)livingOrigin, 10, 0);
+                // ((ClientLevel)this.level()).addEntity(ability);
             }
         }
         else //parent is "alive" and safe
         {
-            this.setPosition(livingOrigin.getPosX(), livingOrigin.getPosY() + (livingOrigin.getHeight() / 2D), livingOrigin.getPosZ());
-            this.setRotation(livingOrigin.rotationYaw, livingOrigin.rotationPitch);
+            this.setPos(livingOrigin.getX(), livingOrigin.getY() + (livingOrigin.getDimensions(Pose.STANDING).height() / 2D), livingOrigin.getZ());
+            this.setYRot(livingOrigin.getYRot());
+            this.setXRot(livingOrigin.getXRot());
 
             boolean allDone = !tendrils.isEmpty();
             boolean anyRetracting = false;
@@ -126,7 +129,7 @@ public class EntityAcquisition extends Entity
 
             if(isMorphAcquisition)
             {
-                if(tendrils.size() < 5 && age % 2 == 0)
+                if(tendrils.size() < 16 && age % 2 == 0)
                 {
                     tendrils.add(new Tendril(null).headTowards(getTargetPos(), false));
                     allDone = false;//do not remove, we're not done yet
@@ -150,68 +153,73 @@ public class EntityAcquisition extends Entity
 
             if(allDone)
             {
-                remove();
+                this.discard();
 
-                if(livingOrigin instanceof PlayerEntity)
+                if(livingOrigin instanceof Player)
                 {
-                    EntityBiomassAbility ability = Morph.EntityTypes.BIOMASS_ABILITY.create(world).setInfo((PlayerEntity)livingOrigin, 10, 0);
-                    ((ClientWorld)world).addEntity(ability.getEntityId(), ability);
+                    // EntityBiomassAbility ability = Morph.EntityTypes.BIOMASS_ABILITY.create(this.level()).setInfo((Player)livingOrigin, 10, 0);
+                    // ((ClientLevel)this.level()).addEntity(ability);
                 }
             }
         }
     }
 
-    public Vector3d getTargetPos()
+    public Vec3 getTargetPos()
     {
-        return livingAcquired.getPositionVec().add(0D, livingAcquired.getHeight() / 2D, 0D);
+        return livingAcquired.position().add(0D, livingAcquired.getDimensions(Pose.STANDING).height() / 2D, 0D);
+    }
+
+    public AABB getRenderBoundingBox()
+    {
+        return livingOrigin.getBoundingBox().minmax(livingAcquired.getBoundingBox());
     }
 
     @Override
-    public AxisAlignedBB getRenderBoundingBox()
-    {
-        return livingOrigin.getBoundingBox().union(livingAcquired.getBoundingBox());
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return livingOrigin.shouldRenderAtSqrDistance(distance) || livingAcquired.shouldRenderAtSqrDistance(distance);
     }
 
     @Override
-    public boolean isInRangeToRenderDist(double distance) {
-        return livingOrigin.isInRangeToRenderDist(distance) || livingAcquired.isInRangeToRenderDist(distance);
+    public float getLightLevelDependentMagicValue()
+    {
+        return livingOrigin.getLightLevelDependentMagicValue();
     }
 
     @Override
-    public float getBrightness()
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder){}
+
+    @Override
+    public boolean shouldRender(double x, double y, double z)
     {
-        return livingOrigin.getBrightness();
+        return livingOrigin.shouldRender(x, y, z);
     }
 
     @Override
-    protected void registerData(){}
+    protected void readAdditionalSaveData(CompoundTag compound){}
 
     @Override
-    public boolean writeUnlessRemoved(CompoundNBT compound) { return false; } //disable saving of entity
+    protected void addAdditionalSaveData(CompoundTag compound){}
 
     @Override
-    protected void readAdditional(CompoundNBT compound){}
-
-    @Override
-    protected void writeAdditional(CompoundNBT compound){}
-
-    @Override
-    public IPacket<?> createSpawnPacket()
+    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity)
     {
-        return NetworkHooks.getEntitySpawningPacket(this);
+        return null; // stub
     }
 
     public void syncWithOriginPosition()
     {
-        double height = (livingOrigin.getHeight() / 2D);
-        this.setLocationAndAngles(livingOrigin.getPosX(), livingOrigin.getPosY() + height, livingOrigin.getPosZ(), livingOrigin.rotationYaw, livingOrigin.rotationPitch);
-        this.lastTickPosX = livingOrigin.lastTickPosX;
-        this.lastTickPosY = livingOrigin.lastTickPosY + height;
-        this.lastTickPosZ = livingOrigin.lastTickPosZ;
+        double height = (livingOrigin.getDimensions(Pose.STANDING).height() / 2D);
+        this.setPos(livingOrigin.getX(), livingOrigin.getY() + height, livingOrigin.getZ());
+        this.setYRot(livingOrigin.getYRot());
+        this.setXRot(livingOrigin.getXRot());
 
-        this.prevPosX = livingOrigin.prevPosX;
-        this.prevPosY = livingOrigin.prevPosY + height;
-        this.prevPosZ = livingOrigin.prevPosZ;
+        this.xo = livingOrigin.xo;
+        this.yo = livingOrigin.yo + height;
+        this.zo = livingOrigin.zo;
+
+        this.xOld = livingOrigin.xOld;
+        this.yOld = livingOrigin.yOld + height;
+        this.zOld = livingOrigin.zOld;
     }
 
     public class Tendril
@@ -220,40 +228,40 @@ public class EntityAcquisition extends Entity
         private Tendril parent; //if null, is the base tendril
 
         private Tendril child;
-        private Vector3d offset;
+        private Vec3 offset;
         private float yaw;
         private float pitch;
         private float lastHeight = 1F;
         private float height = 1F;
 
-        private float maxGrowth = 7F + (float)rand.nextGaussian() * 2F;
+        private float maxGrowth = 7F + (float)random.nextGaussian() * 2F;
 
         private boolean retract;
         private int retractTime;
 
         private float prevRotateSpin;
         private float rotateSpin;
-        private float spinFactor = (float)rand.nextGaussian() * 15F;
+        private float spinFactor = (float)random.nextGaussian() * 15F;
 
         public int depth = 0;
 
-        private MorphRenderHandler.ModelRendererCapture capture;
+        private MorphRenderHandler.ModelPartCapture capture;
 
         public Tendril(Tendril parent)
         {
             this.parent = parent;
             if(parent != null)
             {
-                this.offset = parent.getReachOffset().subtract(getVectorForRotation(parent.pitch, parent.yaw).mul(0.025F, 0.025F, 0.025F));
+                this.offset = parent.getReachOffset().subtract(EntityAcquisition.this.calculateViewVector(parent.pitch, parent.yaw).multiply(0.025F, 0.025F, 0.025F));
                 this.depth = parent.depth + 1;
             }
             else
             {
-                this.offset = new Vector3d(0D, 0D, 0D);
+                this.offset = new Vec3(0D, 0D, 0D);
             }
         }
 
-        public Tendril headTowards(Vector3d pos, boolean rev)
+        public Tendril headTowards(Vec3 pos, boolean rev)
         {
             float randGaus = 5F;
             if(parent != null)
@@ -261,35 +269,43 @@ public class EntityAcquisition extends Entity
                 yaw = parent.yaw;
                 pitch = parent.pitch;
 
-                Vector3d origin = parent.getReachCoord();
-                double d0 = pos.getX() - origin.getX();
-                double d1 = pos.getY() - origin.getY();
-                double d2 = pos.getZ() - origin.getZ();
+                Vec3 origin = parent.getReachCoord();
+                double d0 = pos.x - origin.x;
+                double d1 = pos.y - origin.y;
+                double d2 = pos.z - origin.z;
 
                 float maxChange = isMorphAcquisition ? 30F : 60F;
 
-                double dist = MathHelper.sqrt(d0 * d0 + d2 * d2);
-                float newYaw = (float)(MathHelper.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
-                float newPitch = (float)(-(MathHelper.atan2(d1, dist) * (double)(180F / (float)Math.PI)));
-                this.pitch = EntityHelper.updateRotation(this.pitch, newPitch, maxChange);
-                this.yaw = EntityHelper.updateRotation(this.yaw, newYaw, maxChange);
+                double dist = Mth.sqrt((float)(d0 * d0 + d2 * d2));
+                float newYaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
+                float newPitch = (float)(-(Mth.atan2(d1, dist) * (double)(180F / (float)Math.PI)));
+                this.pitch = Mth.approachDegrees(this.pitch, newPitch, maxChange);
+                this.yaw = Mth.approachDegrees(this.yaw, newYaw, maxChange);
             }
             else
             {
-                yaw = (rev ? (livingOrigin.renderYawOffset + 180F) : livingOrigin.renderYawOffset) % 360F;
-                pitch = 0;
-
-                if(!isMorphAcquisition)
+                if(isMorphAcquisition)
                 {
-                    randGaus = 30F;
+                    Vec3 pos2 = getTargetPos();
+                    double d0 = pos2.x - EntityAcquisition.this.getX();
+                    double d1 = pos2.y - EntityAcquisition.this.getY();
+                    double d2 = pos2.z - EntityAcquisition.this.getZ();
+
+                    double dist = Mth.sqrt((float)(d0 * d0 + d2 * d2));
+                    yaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
+                    pitch = (float)(-(Mth.atan2(d1, dist) * (double)(180F / (float)Math.PI)));
+                    
+                    yaw += (2F + 8F * random.nextFloat()) * (random.nextBoolean() ? 1F : -1F);
+                    pitch += (float)random.nextGaussian() * 3F;
                 }
-
-                yaw += (5F + 25F * rand.nextFloat()) * (rand.nextBoolean() ? 1F : -1F);
-                pitch += (float)rand.nextGaussian() * randGaus;
+                else
+                {
+                    yaw = (rev ? (livingOrigin.yBodyRot + 180F) : livingOrigin.yBodyRot) % 360F;
+                    pitch = 0;
+                    yaw += (5F + 25F * random.nextFloat()) * (random.nextBoolean() ? 1F : -1F);
+                    pitch += (float)random.nextGaussian() * 15F;
+                }
             }
-
-            yaw += (float)rand.nextGaussian() * randGaus;
-            pitch += (float)rand.nextGaussian() * randGaus;
 
             return this;
         }
@@ -308,7 +324,7 @@ public class EntityAcquisition extends Entity
             }
             else
             {
-                float distToEnt = livingOrigin.getDistance(livingAcquired);
+                float distToEnt = livingOrigin.distanceTo(livingAcquired);
                 if(!isMorphAcquisition)
                 {
                     distToEnt *= 2F;
@@ -317,7 +333,7 @@ public class EntityAcquisition extends Entity
                 {
                     if(height < maxGrowth)
                     {
-                        float maxTendrilGrowth = Math.max(0.0625F, distToEnt / Morph.configClient.acquisitionTendrilMaxChild + (float)rand.nextGaussian() * 0.125F); //in blocks
+                        float maxTendrilGrowth = Math.max(0.0625F, distToEnt / Morph.configClient.acquisitionTendrilMaxChild + (float)random.nextGaussian() * 0.125F); //in blocks
                         height += maxTendrilGrowth * 16F;
                         if(getReachCoord().distanceTo(getTargetPos()) < Math.max(0.3F, maxTendrilGrowth)) //close enough?
                         {
@@ -329,29 +345,35 @@ public class EntityAcquisition extends Entity
 
                             child = new Tendril(this);
 
-                            Vector3d pos = getTargetPos();
-                            Vector3d origin = getReachCoord();
-                            double d0 = pos.getX() - origin.getX();
-                            double d1 = pos.getY() - origin.getY();
-                            double d2 = pos.getZ() - origin.getZ();
+                            Vec3 pos = getTargetPos();
+                            Vec3 origin = getReachCoord();
+                            double d0 = pos.x - origin.x;
+                            double d1 = pos.y - origin.y;
+                            double d2 = pos.z - origin.z;
 
-                            double dist = MathHelper.sqrt(d0 * d0 + d2 * d2);
-                            child.yaw = (float)(MathHelper.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
-                            child.pitch = (float)(-(MathHelper.atan2(d1, dist) * (double)(180F / (float)Math.PI)));
-                            child.lastHeight = child.height = (float)MathHelper.sqrt(d0 * d0 + d1 * d1 + d2 * d2) / 16F;
+                            double dist = Mth.sqrt((float)(d0 * d0 + d2 * d2));
+                            child.yaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
+                            child.pitch = (float)(-(Mth.atan2(d1, dist) * (double)(180F / (float)Math.PI)));
+                            child.lastHeight = child.height = (float)Mth.sqrt((float)(d0 * d0 + d1 * d1 + d2 * d2)) / 16F;
 
-                            if(isMorphAcquisition)
+                            if(isMorphAcquisition && !acquiredCapture.infos.isEmpty())
                             {
-                                child.capture = acquiredCapture;
-                                acquiredCapture = null;
+                                child.capture = new MorphRenderHandler.ModelPartCapture();
+                                int count = (int)Math.ceil(Math.max(acquiredCapture.infos.size() / 15F, 1));
+                                for(int x = 0; x < count && !acquiredCapture.infos.isEmpty(); x++)
+                                {
+                                    int i = random.nextInt(acquiredCapture.infos.size());
+                                    child.capture.infos.add(acquiredCapture.infos.get(i));
+                                    acquiredCapture.infos.remove(i);
+                                }
                             }
                             else if(!acquiredCapture.infos.isEmpty())
                             {
-                                child.capture = new MorphRenderHandler.ModelRendererCapture();
+                                child.capture = new MorphRenderHandler.ModelPartCapture();
                                 int count = (int)Math.ceil(Math.max(acquiredCapture.infos.size() / 10F, 1));
                                 for(int x = 0; x < count && !acquiredCapture.infos.isEmpty(); x++)
                                 {
-                                    int i = rand.nextInt(acquiredCapture.infos.size());
+                                    int i = random.nextInt(acquiredCapture.infos.size());
                                     child.capture.infos.add(acquiredCapture.infos.get(i));
                                     acquiredCapture.infos.remove(i);
                                     if(x > 0)
@@ -376,18 +398,18 @@ public class EntityAcquisition extends Entity
                 }
                 else if(retractTime <= 3)
                 {
-                    float maxTendrilGrowth = Math.max(0.0625F, distToEnt / Morph.configClient.acquisitionTendrilMaxChild + (float)rand.nextGaussian() * 0.125F); //in blocks
+                    float maxTendrilGrowth = Math.max(0.0625F, distToEnt / Morph.configClient.acquisitionTendrilMaxChild + (float)random.nextGaussian() * 0.125F); //in blocks
                     if(getReachCoord().distanceTo(getTargetPos()) > Math.max(0.5F, maxTendrilGrowth))
                     {
-                        Vector3d pos = getTargetPos();
-                        Vector3d origin = getReachCoord();
-                        double d0 = pos.getX() - origin.getX();
-                        double d1 = pos.getY() - origin.getY();
-                        double d2 = pos.getZ() - origin.getZ();
+                        Vec3 pos = getTargetPos();
+                        Vec3 origin = getReachCoord();
+                        double d0 = pos.x - origin.x;
+                        double d1 = pos.y - origin.y;
+                        double d2 = pos.z - origin.z;
 
-                        double dist = MathHelper.sqrt(d0 * d0 + d2 * d2);
-                        yaw = (float)(MathHelper.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
-                        pitch = (float)(-(MathHelper.atan2(d1, dist) * (double)(180F / (float)Math.PI)));
+                        double dist = Mth.sqrt((float)(d0 * d0 + d2 * d2));
+                        yaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
+                        pitch = (float)(-(Mth.atan2(d1, dist) * (double)(180F / (float)Math.PI)));
 
                         height += maxTendrilGrowth * 16F;
                     }
@@ -400,7 +422,7 @@ public class EntityAcquisition extends Entity
                         rotateSpin += spinFactor;
                     }
 
-                    float maxTendrilGrowth = Math.max(0.0625F, distToEnt / (Morph.configClient.acquisitionTendrilMaxChild * 2F) + (float)rand.nextGaussian() * 0.125F); //in blocks
+                    float maxTendrilGrowth = Math.max(0.0625F, distToEnt / (Morph.configClient.acquisitionTendrilMaxChild * 2F) + (float)random.nextGaussian() * 0.125F); //in blocks
                     height -= maxTendrilGrowth * 16F;
                     if(height <= 0)
                     {
@@ -444,15 +466,15 @@ public class EntityAcquisition extends Entity
             }
         }
 
-        public Vector3d getReachOffset()
+        public Vec3 getReachOffset()
         {
             float growth = height / 16F;
-            return offset.add(getVectorForRotation(pitch, yaw).mul(growth, growth, growth));
+            return offset.add(EntityAcquisition.this.calculateViewVector(pitch, yaw).multiply(growth, growth, growth));
         }
 
-        public Vector3d getReachCoord()
+        public Vec3 getReachCoord()
         {
-            return EntityAcquisition.this.getPositionVec().add(getReachOffset());
+            return EntityAcquisition.this.position().add(getReachOffset());
         }
 
         public float getWidth(float partialTick)
@@ -482,49 +504,102 @@ public class EntityAcquisition extends Entity
             return depth;
         }
 
-        public void createModelRenderer(ArrayList<ModelRenderer> renderers, float partialTick)
+        public void renderTendril(EntityAcquisition entity, PoseStack stack, VertexConsumer buffer, int light, int overlay, float partialTick)
         {
             if(child != null)
             {
-                child.createModelRenderer(renderers, partialTick);
+                child.renderTendril(entity, stack, buffer, light, overlay, partialTick);
             }
 
-            ModelRenderer model = new ModelRenderer(64, 64, rand.nextInt(8), rand.nextInt(8));
-            float width = getWidth(partialTick);
+            float width = getWidth(partialTick) / 16F;
             float halfWidth = width / 2F;
-            model.addBox(-halfWidth, -halfWidth, 0F, width, width, lastHeight + (height - lastHeight) * partialTick);
-            model.rotationPointX = (float)(offset.getX() * 16F);
-            model.rotationPointY = (float)(offset.getY() * 16F);
-            model.rotationPointZ = (float)(offset.getZ() * 16F);
-            model.rotateAngleX = (float)Math.toRadians(pitch);
-            model.rotateAngleY = (float)Math.toRadians(-yaw);
-            renderers.add(model);
+            float len = lastHeight + (height - lastHeight) * partialTick;
+            
+            if (len > 0) {
+                float alpha = 1F;
+                if(entity.livingOrigin == net.minecraft.client.Minecraft.getInstance().cameraEntity && net.minecraft.client.Minecraft.getInstance().options.getCameraType() == net.minecraft.client.CameraType.FIRST_PERSON)
+                {
+                    alpha = Mth.clamp((depth + 1) / (float)Morph.configClient.acquisitionTendrilPartOpacity, 0F, 1F);
+                }
+
+                stack.pushPose();
+                stack.translate(offset.x, offset.y, offset.z);
+                stack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-yaw));
+                stack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(pitch));
+                
+                // Draw a simple box (Black)
+                renderBox(stack, buffer, -halfWidth, -halfWidth, 0, halfWidth, halfWidth, len, 0F, 0F, 0F, alpha, light, overlay);
+
+                stack.popPose();
+            }
         }
 
-        public void renderCapture(EntityAcquisition acquisition, MatrixStack stack, IVertexBuilder vertexBuilder, int light, int overlay, float partialTick)
+        private void renderBox(PoseStack stack, VertexConsumer buffer, float minX, float minY, float minZ, float maxX, float maxY, float maxZ, float r, float g, float b, float a, int light, int overlay) {
+            org.joml.Matrix4f pose = stack.last().pose();
+            org.joml.Matrix3f normal = stack.last().normal();
+
+            // Very simplified box - just its edges or faces
+            // Front
+            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, 0, 0, light, overlay, 0, 0, 1);
+            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, 1, 0, light, overlay, 0, 0, 1);
+            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, 1, 1, light, overlay, 0, 0, 1);
+            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, 0, 1, light, overlay, 0, 0, 1);
+            // Back
+            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, 0, 0, light, overlay, 0, 0, -1);
+            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, 0, 1, light, overlay, 0, 0, -1);
+            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, 1, 1, light, overlay, 0, 0, -1);
+            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, 1, 0, light, overlay, 0, 0, -1);
+            // Left
+            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, 0, 0, light, overlay, -1, 0, 0);
+            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, 1, 0, light, overlay, -1, 0, 0);
+            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, 1, 1, light, overlay, -1, 0, 0);
+            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, 0, 1, light, overlay, -1, 0, 0);
+            // Right
+            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, 0, 0, light, overlay, 1, 0, 0);
+            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, 0, 1, light, overlay, 1, 0, 0);
+            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, 1, 1, light, overlay, 1, 0, 0);
+            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, 1, 0, light, overlay, 1, 0, 0);
+            // Top
+            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, 0, 0, light, overlay, 0, 1, 0);
+            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, 1, 0, light, overlay, 0, 1, 0);
+            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, 1, 1, light, overlay, 0, 1, 0);
+            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, 0, 1, light, overlay, 0, 1, 0);
+            // Bottom
+            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, 0, 0, light, overlay, 0, -1, 0);
+            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, 1, 0, light, overlay, 0, -1, 0);
+            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, 1, 1, light, overlay, 0, -1, 0);
+            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, 0, 1, light, overlay, 0, -1, 0);
+        }
+
+        private void addVertex(org.joml.Matrix4f pose, org.joml.Matrix3f normal, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a, float u, float v, int light, int overlay, float nx, float ny, float nz) {
+            org.joml.Vector3f transformedNormal = normal.transform(new org.joml.Vector3f(nx, ny, nz));
+            buffer.addVertex(pose, x, y, z).setColor(r, g, b, a).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(transformedNormal.x(), transformedNormal.y(), transformedNormal.z());
+        }
+
+        public void renderCapture(EntityAcquisition acquisition, PoseStack matrixStack, VertexConsumer vertexBuilder, int light, int overlay, float partialTick)
         {
             if(child != null)
             {
-                child.renderCapture(acquisition, stack, vertexBuilder, light, overlay, partialTick);
+                child.renderCapture(acquisition, matrixStack, vertexBuilder, light, overlay, partialTick);
             }
             else if(capture != null) //only at tendril endpoints.
             {
                 float renderHeight = lastHeight + (height - lastHeight) * partialTick;
                 float heightOffset = renderHeight / 16F;
-                Vector3d look = getVectorForRotation(pitch, yaw);
-                Vector3d renderPoint = offset.add(look.mul(heightOffset, heightOffset, heightOffset));
+                Vec3 look = EntityAcquisition.this.calculateViewVector(pitch, yaw);
+                Vec3 renderPoint = offset.add(look.multiply(heightOffset, heightOffset, heightOffset));
 
                 float alpha = 1F;
-                if(acquisition.livingOrigin == Minecraft.getInstance().getRenderViewEntity() && Minecraft.getInstance().gameSettings.getPointOfView() == PointOfView.FIRST_PERSON)
+                if(acquisition.livingOrigin == net.minecraft.client.Minecraft.getInstance().cameraEntity && net.minecraft.client.Minecraft.getInstance().options.getCameraType() == CameraType.FIRST_PERSON)
                 {
-                    alpha = MathHelper.clamp((depth + 1) / (float)Morph.configClient.acquisitionTendrilPartOpacity, 0F, 1F);
+                    alpha = Mth.clamp((depth + 1) / (float)Morph.configClient.acquisitionTendrilPartOpacity, 0F, 1F);
                 }
 
                 if(alpha > 0F)
                 {
                     float scale;
-                    double distToEnt = acquisition.livingOrigin.getDistance(acquisition.livingAcquired);
-                    double distToRenderPoint = MathHelper.sqrt(acquisition.getDistanceSq(acquisition.getPositionVec().add(renderPoint)));
+                    double distToEnt = acquisition.livingOrigin.distanceTo(acquisition.livingAcquired);
+                    double distToRenderPoint = Mth.sqrt((float)acquisition.distanceToSqr(acquisition.position().add(renderPoint)));
                     if(distToEnt > 0D)
                     {
                         scale = (float)(Math.min(distToEnt, (distToRenderPoint + 0.5D)) / distToEnt); //+1 to make the render still show the entity slightly as it's being pulled in.
@@ -534,32 +609,32 @@ public class EntityAcquisition extends Entity
                         scale = 0F;
                     }
 
-                    stack.push();
-                    stack.translate(renderPoint.getX(), renderPoint.getY(), renderPoint.getZ());
-                    stack.scale(scale, scale, scale);
+                    matrixStack.pushPose();
+                    matrixStack.translate(renderPoint.x, renderPoint.y, renderPoint.z);
+                    matrixStack.scale(scale, scale, scale);
                     float rot = prevRotateSpin + (rotateSpin - prevRotateSpin) * partialTick;
-                    stack.rotate(Vector3f.ZP.rotationDegrees(rot));
-                    stack.rotate(Vector3f.YP.rotationDegrees(rot));
-                    stack.translate(0D, -(acquisition.livingAcquired.getHeight() / 2D), 0D);
+                    matrixStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rot));
+                    // stack.rotate(Vector3f.YP.rotationDegrees(rot));
+                    matrixStack.translate(0D, -(acquisition.livingAcquired.getDimensions(net.minecraft.world.entity.Pose.STANDING).height() / 2D), 0D);
                     if(isMorphAcquisition)
                     {
-                        capture.render(stack, vertexBuilder, light, overlay, alpha);
+                        capture.render(matrixStack, vertexBuilder, light, overlay, 1F, 1F, 1F, alpha);
                     }
                     else
                     {
-                        for(MorphRenderHandler.ModelRendererCapture.CaptureInfo info : capture.infos)
+                        for(MorphRenderHandler.CaptureInfo info : capture.infos)
                         {
-                            MatrixStack identityStack = new MatrixStack();
-                            stack.push();
-                            MatrixStack.Entry e = RenderHelper.createInterimStackEntry(identityStack.getLast(), info.e, MathHelper.clamp(scale * 3F, 0F, 1F));
-                            MatrixStack.Entry last = stack.getLast();
-                            last.getMatrix().mul(e.getMatrix());
-                            last.getNormal().mul(e.getNormal());
-                            info.createAndRender(stack, vertexBuilder, light, overlay, 1F, 1F, 1F, alpha);
-                            stack.pop();
+                            PoseStack identityStack = new PoseStack();
+                            matrixStack.pushPose();
+                            PoseStack.Pose e = RenderHelper.createInterimStackEntry(identityStack.last(), info.e, Mth.clamp(scale * 3F, 0F, 1F));
+                            PoseStack.Pose last = matrixStack.last();
+                            last.pose().mul(e.pose());
+                            last.normal().mul(e.normal());
+                            info.createAndRender(matrixStack, vertexBuilder, light, overlay, 1F, 1F, 1F, alpha);
+                            matrixStack.popPose();
                         }
                     }
-                    stack.pop();
+                    matrixStack.popPose();
                 }
             }
         }

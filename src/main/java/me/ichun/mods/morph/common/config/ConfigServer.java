@@ -7,11 +7,11 @@ import me.ichun.mods.morph.api.morph.AttributeConfig;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.mode.MorphModeType;
 import me.ichun.mods.morph.common.morph.MorphHandler;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraftforge.fml.common.thread.EffectiveSide;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.Util;
+
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -88,11 +88,6 @@ public class ConfigServer extends ConfigBase
     @Override
     public void onConfigLoaded()
     {
-        if(EffectiveSide.get().isClient() && (ServerLifecycleHooks.getCurrentServer() != null && ServerLifecycleHooks.getCurrentServer().isSinglePlayer())) //we're on single player, let's not reload the pool.
-        {
-            return;
-        }
-
         MorphModeType morphMode = this.morphMode;
         if(morphMode == MorphModeType.DEFAULT) //TODO remove this to enable default mode
         {
@@ -128,7 +123,7 @@ public class ConfigServer extends ConfigBase
                 continue;
             }
 
-            ResourceLocation rl = new ResourceLocation(split.get(0));
+            ResourceLocation rl = ResourceLocation.parse(split.get(0));
             boolean more = split.get(1).equalsIgnoreCase("more");
             Double cap = null;
 

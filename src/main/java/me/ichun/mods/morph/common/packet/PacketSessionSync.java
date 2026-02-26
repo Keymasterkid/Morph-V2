@@ -4,9 +4,8 @@ import me.ichun.mods.ichunutil.common.network.AbstractPacket;
 import me.ichun.mods.morph.api.biomass.BiomassUpgradeInfo;
 import me.ichun.mods.morph.common.biomass.BiomassUpgradeHandler;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
-
+import net.minecraft.network.FriendlyByteBuf;
+// NetworkEvent removed - use IPayload pattern in 1.21
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -22,18 +21,18 @@ public class PacketSessionSync extends AbstractPacket
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
         buf.writeInt(upgrades.size());
 
         for(BiomassUpgradeInfo upgrade : upgrades)
         {
-            buf.writeString(ResourceHandler.GSON_MINIFY.toJson(upgrade));
+            buf.writeUtf(ResourceHandler.GSON_MINIFY.toJson(upgrade));
         }
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
         upgrades = new ArrayList<>();
 
@@ -45,7 +44,7 @@ public class PacketSessionSync extends AbstractPacket
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         context.enqueueWork(() -> {
             BiomassUpgradeHandler.BIOMASS_UPGRADES.clear();

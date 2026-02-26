@@ -8,11 +8,11 @@ import me.ichun.mods.morph.api.event.MorphLoadResourceEvent;
 import me.ichun.mods.morph.api.mob.MobData;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.resources.ResourceLocation;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.apache.commons.io.FileUtils;
 
 import javax.annotation.Nullable;
@@ -68,7 +68,7 @@ public class MobDataHandler
 
         readdModMobData();
 
-        MinecraftForge.EVENT_BUS.post(new MorphLoadResourceEvent(MorphLoadResourceEvent.Type.MOB));
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new MorphLoadResourceEvent(MorphLoadResourceEvent.Type.MOB));
     }
 
     private static boolean readMobDataJson(String json) throws JsonSyntaxException, IllegalStateException
@@ -78,7 +78,7 @@ public class MobDataHandler
         if(jsonObject.has("forEntity"))
         {
             String resourceId = jsonObject.get("forEntity").getAsString();
-            ResourceLocation rl = new ResourceLocation(resourceId);
+            ResourceLocation rl = ResourceLocation.parse(resourceId);
 
             if(MOB_DATA.containsKey(rl))
             {
@@ -87,7 +87,7 @@ public class MobDataHandler
 
             try
             {
-                if(ForgeRegistries.ENTITIES.containsKey(rl)) //this entity type is registered, load it up
+                if(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.containsKey(rl)) //this entity type is registered, load it up
                 {
                     MobData mobData = ResourceHandler.GSON.fromJson(json, MobData.class);
                     MOB_DATA.put(rl, mobData);
@@ -129,6 +129,6 @@ public class MobDataHandler
     @Nullable
     public static MobData getMobData(LivingEntity living)
     {
-        return getMobData(living.getType().getRegistryName());
+        return getMobData(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(living.getType()));
     }
 }

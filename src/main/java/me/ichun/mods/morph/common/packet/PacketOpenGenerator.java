@@ -1,16 +1,10 @@
 package me.ichun.mods.morph.common.packet;
 
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
-import me.ichun.mods.morph.client.gui.mob.WorkspaceMobData;
-import me.ichun.mods.morph.client.gui.nbt.WorkspaceNbt;
-import net.minecraft.client.Minecraft;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.network.FriendlyByteBuf;
 
 public class PacketOpenGenerator extends AbstractPacket
 {
@@ -24,43 +18,44 @@ public class PacketOpenGenerator extends AbstractPacket
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
         buf.writeInt(targetId);
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
         targetId = buf.readInt();
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
-        handleClient(context);
+        if (context.flow().isClientbound()) {
+            handleClient();
+        }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private void handleClient(NetworkEvent.Context context)
+    private void handleClient()
     {
-        context.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            if(targetId >= 0)
-            {
-                Entity target = mc.world.getEntityByID(targetId);
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.level == null) return;
+        
+        if(targetId >= 0)
+        {
+            Entity target = mc.level.getEntity(targetId);
 
-                if(target instanceof LivingEntity && !(target instanceof PlayerEntity))
-                {
-                    LivingEntity living = (LivingEntity)target;
-
-                    Minecraft.getInstance().displayGuiScreen(new WorkspaceNbt(Minecraft.getInstance().currentScreen, living));
-                }
-            }
-            else
+            if(target instanceof LivingEntity && !(target instanceof Player))
             {
-                Minecraft.getInstance().displayGuiScreen(new WorkspaceMobData(Minecraft.getInstance().currentScreen));
+                LivingEntity living = (LivingEntity)target;
+
+                mc.setScreen(new me.ichun.mods.morph.client.gui.nbt.WorkspaceNbt(mc.screen, living));
             }
-        });
+        }
+        else
+        {
+            mc.setScreen(new me.ichun.mods.morph.client.gui.mob.WorkspaceMobData(mc.screen));
+        }
     }
 }

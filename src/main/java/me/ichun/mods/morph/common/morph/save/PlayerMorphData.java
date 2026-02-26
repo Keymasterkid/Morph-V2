@@ -2,7 +2,7 @@ package me.ichun.mods.morph.common.morph.save;
 
 import me.ichun.mods.morph.api.biomass.BiomassUpgrade;
 import me.ichun.mods.morph.api.morph.MorphVariant;
-import net.minecraft.nbt.CompoundNBT;
+import net.minecraft.nbt.CompoundTag;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -65,7 +65,7 @@ public class PlayerMorphData
         }
 
         //it wasn't added, add it.
-        MorphVariant varClone = MorphVariant.createFromNBT(variant.write(new CompoundNBT()));
+        MorphVariant varClone = MorphVariant.createFromNBT(variant.write(new CompoundTag()));
 
         varClone.variants.add(variant.thisVariant);
         varClone.thisVariant = null;
@@ -97,13 +97,13 @@ public class PlayerMorphData
         return 0D;
     }
 
-    public CompoundNBT write(CompoundNBT tag)
+    public CompoundTag write(CompoundTag tag)
     {
-        tag.putUniqueId("owner", owner);
+        tag.putUUID("owner", owner);
         tag.putInt("morphCount", morphs.size());
         for(int i = 0; i < morphs.size(); i++)
         {
-            tag.put("morph_" + i, morphs.get(i).write(new CompoundNBT()));
+            tag.put("morph_" + i, morphs.get(i).write(new CompoundTag()));
         }
 
         tag.putDouble("biomass", biomass);
@@ -111,15 +111,15 @@ public class PlayerMorphData
         tag.putInt("upgradeCount", upgrades.size());
         for(int i = 0; i < upgrades.size(); i++)
         {
-            tag.put("upgrade_" + i, upgrades.get(i).write(new CompoundNBT()));
+            tag.put("upgrade_" + i, upgrades.get(i).write(new CompoundTag()));
         }
 
         return tag;
     }
 
-    public void read(CompoundNBT tag)
+    public void read(CompoundTag tag)
     {
-        owner = tag.getUniqueId("owner");
+        owner = tag.getUUID("owner");
 
         morphs.clear();
         int count = tag.getInt("morphCount");

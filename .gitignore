@@ -6,6 +6,9 @@ bin
 .classpath
 .project
 
+# IchunUtil 1.16 open source
+iChunUtil-1.16
+
 # idea
 out
 *.ipr

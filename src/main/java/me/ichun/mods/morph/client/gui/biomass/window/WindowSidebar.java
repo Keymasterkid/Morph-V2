@@ -50,7 +50,7 @@ public class WindowSidebar extends Window<WorkspaceMorph>
             //now, add the optional ones
             ElementToggleRotatable last = toggleBiomassUpgrades;
 
-            if(MorphHandler.INSTANCE.getBiomassUpgrade(Minecraft.getInstance().player, Upgrades.ID_BIOMASS_ABILITIES) != null) //has unlocked biomass abilities
+            if(MorphHandler.INSTANCE.getBiomassUpgrade(net.minecraft.client.Minecraft.getInstance().player, Upgrades.ID_BIOMASS_ABILITIES) != null) //has unlocked biomass abilities
             {
                 ElementToggleRotatable toggleBiomassAbilities = new ElementToggleRotatable(this, "morph.gui.scene.biomassAbilities.title", -1, btn -> {
                     parent.parent.setScene(parent.parent.sceneBiomassAbilities);
@@ -62,7 +62,7 @@ public class WindowSidebar extends Window<WorkspaceMorph>
                 last = toggleBiomassAbilities;
             }
 
-            if(MorphHandler.INSTANCE.getBiomassUpgrade(Minecraft.getInstance().player, Upgrades.ID_MORPH_ABILITY) != null) //has unlocked morphing
+            if(MorphHandler.INSTANCE.getBiomassUpgrade(net.minecraft.client.Minecraft.getInstance().player, Upgrades.ID_MORPH_ABILITY) != null) //has unlocked morphing
             {
                 ElementToggleRotatable toggleMorphs = new ElementToggleRotatable(this, "morph.gui.scene.morphs.title", -1, btn -> {
                     parent.parent.setScene(parent.parent.sceneMorphs);

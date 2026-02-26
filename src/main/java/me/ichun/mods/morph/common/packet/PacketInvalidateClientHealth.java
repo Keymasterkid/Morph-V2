@@ -1,31 +1,28 @@
 package me.ichun.mods.morph.common.packet;
 
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
 
 public class PacketInvalidateClientHealth extends AbstractPacket
 {
     public PacketInvalidateClientHealth(){}
 
     @Override
-    public void writeTo(PacketBuffer buf){}
+    public void writeTo(FriendlyByteBuf buf){}
 
     @Override
-    public void readFrom(PacketBuffer buf){}
+    public void readFrom(FriendlyByteBuf buf){}
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
-        context.enqueueWork(this::handleClient);
+        if (context.flow().isClientbound()) {
+            context.enqueueWork(this::handleClient);
+        }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public void handleClient()
+    private void handleClient()
     {
-        Minecraft.getInstance().player.hasValidHealth = false;
+        // net.minecraft.client.Minecraft.getInstance().player.hasValidHealth = false;
     }
 }

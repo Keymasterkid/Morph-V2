@@ -9,7 +9,7 @@ import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.*;
 import me.ichun.mods.morph.api.mob.trait.Trait;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.mob.TraitHandler;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
@@ -51,7 +51,7 @@ public class WindowAddTrait extends Window<Workspace>
                     .top(this, Constraint.Property.Type.TOP, 0));
             elements.add(list);
 
-            ElementButton<?> button = new ElementButton<>(this, I18n.format("gui.cancel"), btn ->
+            ElementButton<?> button = new ElementButton<>(this, I18n.get("gui.cancel"), btn ->
             {
                 getWorkspace().removeWindow(parent);
             });
@@ -59,7 +59,7 @@ public class WindowAddTrait extends Window<Workspace>
             button.setConstraint(new Constraint(button).bottom(this, Constraint.Property.Type.BOTTOM, 10).right(this, Constraint.Property.Type.RIGHT, 14));
             elements.add(button);
 
-            ElementButton<?> button1 = new ElementButton<>(this, I18n.format("gui.ok"), btn ->
+            ElementButton<?> button1 = new ElementButton<>(this, I18n.get("gui.ok"), btn ->
             {
                 for(ElementList.Item<?> item : list.items)
                 {
@@ -103,7 +103,7 @@ public class WindowAddTrait extends Window<Workspace>
             });
             clzList.forEach((k, v) -> {
                         final Trait<?> instance = k;
-                        ElementList.Item<? extends Trait<?>> traitItem = list.addItem(instance).addTextWrapper(I18n.format(instance.getTranslationKeyRoot() + ".name")).setDoubleClickHandler(item -> {
+                        ElementList.Item<? extends Trait<?>> traitItem = list.addItem(instance).addTextWrapper(I18n.get(instance.getTranslationKeyRoot() + ".name")).setDoubleClickHandler(item -> {
                             if(item.selected)
                             {
                                 returnTraitInstance(instance);
@@ -116,7 +116,7 @@ public class WindowAddTrait extends Window<Workspace>
                             }
                             return false;
                         }).setSelectionHandler(item -> {
-                            String desc = I18n.format(instance.getTranslationKeyRoot() + ".desc");
+                            String desc = I18n.get(instance.getTranslationKeyRoot() + ".desc");
                             if(item.selected && !desc.equals(instance.getTranslationKeyRoot() + ".desc"))
                             {
                                 description.setText(desc);

@@ -1,96 +1,90 @@
 package me.ichun.mods.morph.client.render;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import me.ichun.mods.morph.client.entity.EntityAcquisition;
 import me.ichun.mods.morph.client.model.ModelAcquisition;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.morph.MorphHandler;
-import net.minecraft.client.renderer.IRenderTypeBuffer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.culling.ClippingHelper;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
-import net.minecraft.client.renderer.entity.EntityRendererManager;
-import net.minecraft.client.renderer.entity.LivingRenderer;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.vector.Vector3d;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.client.registry.IRenderFactory;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class RenderEntityAcquisition extends EntityRenderer<EntityAcquisition>
 {
     private final ModelAcquisition model;
 
-    protected RenderEntityAcquisition(EntityRendererManager renderManager)
+    public RenderEntityAcquisition(EntityRendererProvider.Context context)
     {
-        super(renderManager);
+        super(context);
         model = new ModelAcquisition();
-        shadowSize = 0.0F;
+        shadowRadius = 0.0F;
     }
 
     @Override
-    public void render(EntityAcquisition acquisition, float entityYaw, float partialTicks, MatrixStack stack, IRenderTypeBuffer buffer, int light)
+    public void render(EntityAcquisition acquisition, float entityYaw, float partialTicks, PoseStack stack, MultiBufferSource buffer, int light)
     {
         if(acquisition.acquiredCapture != null)
         {
-            EntityRenderer<? super LivingEntity> renderer = renderManager.getRenderer(acquisition.livingAcquired);
-            Vector3d vector3d = renderer.getRenderOffset(acquisition.livingAcquired, partialTicks);
+            EntityRenderer<? super LivingEntity> renderer = this.entityRenderDispatcher.getRenderer(acquisition.livingAcquired);
+            Vec3 renderOffset = renderer.getRenderOffset(acquisition.livingAcquired, partialTicks);
 
             //calculate the difference of that entity from ours
-            double d0 = MathHelper.lerp(partialTicks, acquisition.livingAcquired.lastTickPosX - acquisition.lastTickPosX, acquisition.livingAcquired.getPosX() - acquisition.getPosX()) + vector3d.getX();
-            double d1 = MathHelper.lerp(partialTicks, acquisition.livingAcquired.lastTickPosY - acquisition.lastTickPosY, acquisition.livingAcquired.getPosY() - acquisition.getPosY()) + vector3d.getY();
-            double d2 = MathHelper.lerp(partialTicks, acquisition.livingAcquired.lastTickPosZ - acquisition.lastTickPosZ, acquisition.livingAcquired.getPosZ() - acquisition.getPosZ()) + vector3d.getZ();
+            double d0 = Mth.lerp(partialTicks, acquisition.livingAcquired.xo - acquisition.xo, acquisition.livingAcquired.getX() - acquisition.getX()) + renderOffset.x;
+            double d1 = Mth.lerp(partialTicks, acquisition.livingAcquired.yo - acquisition.yo, acquisition.livingAcquired.getY() - acquisition.getY()) + renderOffset.y;
+            double d2 = Mth.lerp(partialTicks, acquisition.livingAcquired.zo - acquisition.zo, acquisition.livingAcquired.getZ() - acquisition.getZ()) + renderOffset.z;
 
-            if(acquisition.age <= 10)
+            if(acquisition.acquiredCapture.infos.isEmpty() && acquisition.tickCount < 30)
             {
-                stack.push();
-                stack.translate(d0, d1, d2);
-                MorphRenderHandler.renderLiving(renderer, acquisition.livingAcquired, stack, buffer, renderManager.getPackedLight(acquisition.livingAcquired, partialTicks), partialTicks);
-                stack.pop();
-
                 MorphRenderHandler.currentCapture = acquisition.acquiredCapture;
                 MorphRenderHandler.currentCapture.infos.clear();
 
-                MorphRenderHandler.renderLiving(renderer, acquisition.livingAcquired, new MatrixStack(), buffer, renderManager.getPackedLight(acquisition.livingAcquired, partialTicks), partialTicks, Morph.configServer.biomassSkinWhilstInvisible);
+                MorphRenderHandler.renderLiving(renderer, acquisition.livingAcquired, new PoseStack(), buffer, this.entityRenderDispatcher.getPackedLightCoords(acquisition.livingAcquired, partialTicks), partialTicks, Morph.configServer.biomassSkinWhilstInvisible);
 
                 MorphRenderHandler.currentCapture = null;
 
                 acquisition.maxRequiredTendrils = acquisition.acquiredCapture.infos.size();
             }
 
-            float skinAlpha = MathHelper.clamp((acquisition.age + partialTicks) / 10, 0F, 1F);
+            float skinAlpha = Mth.clamp((acquisition.tickCount + partialTicks) / 10, 0F, 1F);
 
-            stack.push();
+            stack.pushPose();
             stack.translate(d0, d1, d2);
             acquisition.acquiredCapture.render(stack, buffer, light, OverlayTexture.NO_OVERLAY, skinAlpha);
-            stack.pop();
+            stack.popPose();
         }
-        model.render(acquisition, partialTicks, stack, buffer.getBuffer(RenderType.getEntityTranslucent(getEntityTexture(acquisition))), light, LivingRenderer.getPackedOverlay(acquisition.livingOrigin, 0F));
+        model.render(acquisition, partialTicks, stack, buffer.getBuffer(RenderType.entityTranslucent(getTextureLocation(acquisition))), light, LivingEntityRenderer.getOverlayCoords(acquisition.livingOrigin, 0F));
     }
 
     @Override
-    public boolean shouldRender(EntityAcquisition livingEntityIn, ClippingHelper camera, double camX, double camY, double camZ)
+    public boolean shouldRender(EntityAcquisition entity, Frustum camera, double camX, double camY, double camZ)
     {
-        livingEntityIn.syncWithOriginPosition();
-        return super.shouldRender(livingEntityIn, camera, camX, camY, camZ);
+        entity.syncWithOriginPosition();
+        return super.shouldRender(entity, camera, camX, camY, camZ);
     }
 
     @Override
-    public ResourceLocation getEntityTexture(EntityAcquisition entity)
+    public ResourceLocation getTextureLocation(EntityAcquisition entity)
     {
         return MorphHandler.INSTANCE.getMorphSkinTexture();
     }
 
-    public static class RenderFactory implements IRenderFactory<EntityAcquisition>
+    public static class RenderFactory implements EntityRendererProvider<EntityAcquisition>
     {
         @Override
-        public EntityRenderer<? super EntityAcquisition> createRenderFor(EntityRendererManager manager)
+        public EntityRenderer<EntityAcquisition> create(EntityRendererProvider.Context context)
         {
-            return new RenderEntityAcquisition(manager);
+            return new RenderEntityAcquisition(context);
         }
     }
 }

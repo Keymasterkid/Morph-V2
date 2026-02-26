@@ -1,16 +1,10 @@
 package me.ichun.mods.morph.common.packet;
 
-import me.ichun.mods.ichunutil.common.entity.util.EntityHelper;
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
-import me.ichun.mods.morph.client.entity.EntityAcquisition;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraft.client.Minecraft;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.network.FriendlyByteBuf;
 
 public class PacketAcquisition extends AbstractPacket
 {
@@ -29,7 +23,7 @@ public class PacketAcquisition extends AbstractPacket
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
         buf.writeInt(originId);
         buf.writeInt(acquiredId);
@@ -37,7 +31,7 @@ public class PacketAcquisition extends AbstractPacket
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
         originId = buf.readInt();
         acquiredId = buf.readInt();
@@ -45,47 +39,60 @@ public class PacketAcquisition extends AbstractPacket
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         if(isMorphAcquisition && (Morph.configClient.acquisitionPlayAnimation == 1 || Morph.configClient.acquisitionPlayAnimation == 3)|| !isMorphAcquisition && Morph.configClient.acquisitionPlayAnimation >= 2)
         {
-            handleClient(context);
+            if (context.flow().isClientbound()) {
+                context.enqueueWork(() -> handleClient());
+            }
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private void handleClient(NetworkEvent.Context context)
+    private void handleClient()
     {
-        context.enqueueWork(() -> {
-            Minecraft mc = Minecraft.getInstance();
-            Entity origin = mc.world.getEntityByID(originId);
-            Entity acquired = mc.world.getEntityByID(acquiredId);
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.level == null) return;
+        
+        Entity origin = mc.level.getEntity(originId);
+        Entity acquired = mc.level.getEntity(acquiredId);
 
-            if(origin instanceof LivingEntity && acquired instanceof LivingEntity)
-            {
-                LivingEntity livingAcquired = (LivingEntity)acquired;
-                EntityAcquisition ent = Morph.EntityTypes.ACQUISITION.create(mc.world).setTargets((LivingEntity)origin, livingAcquired, isMorphAcquisition);
-                mc.world.addEntity(ent.getEntityId(), ent);
-                if(livingAcquired != mc.player)
-                {
-                    livingAcquired.remove(false);
-                }
-                else
-                {
-                    EntityHelper.faceEntity(livingAcquired, origin, 360F, 360F);
-                }
-
-                //block the hurt overlay/death rotation
-                acquired.setLocationAndAngles(acquired.getPosX(), acquired.getPosY(), acquired.getPosZ(), acquired.rotationYaw, acquired.rotationPitch);
-                livingAcquired.prevRenderYawOffset = livingAcquired.renderYawOffset;
-                livingAcquired.prevSwingProgress = livingAcquired.swingProgress;
-                livingAcquired.prevLimbSwingAmount = livingAcquired.limbSwingAmount;
-                livingAcquired.prevRotationYawHead = livingAcquired.rotationYawHead;
-                livingAcquired.prevRotationYaw = livingAcquired.rotationYaw;
-                livingAcquired.prevRotationPitch = livingAcquired.rotationPitch;
-                livingAcquired.deathTime = 0;
-                livingAcquired.hurtTime = 0;
+        if(origin instanceof LivingEntity && acquired instanceof LivingEntity)
+        {
+            LivingEntity livingAcquired = (LivingEntity)acquired;
+            me.ichun.mods.morph.client.entity.EntityAcquisition ent = Morph.EntityTypes.ACQUISITION.create(mc.level);
+            if (ent != null) {
+                ent.setTargets((LivingEntity)origin, livingAcquired, isMorphAcquisition);
+                mc.level.addEntity(ent);
             }
-        });
+            
+            if(livingAcquired != mc.player)
+            {
+                livingAcquired.remove(Entity.RemovalReason.DISCARDED);
+            }
+            else
+            {
+                if (origin instanceof net.minecraft.world.entity.LivingEntity livingOrigin) {
+                    livingAcquired.setYRot(livingOrigin.getYRot());
+                    livingAcquired.setXRot(livingOrigin.getXRot());
+                    livingAcquired.yHeadRot = livingOrigin.yHeadRot;
+                    livingAcquired.yBodyRot = livingOrigin.yBodyRot;
+                }
+            }
+
+            //block the hurt overlay/death rotation
+            livingAcquired.setPos(acquired.getX(), acquired.getY(), acquired.getZ());
+            livingAcquired.setYRot(acquired.getYRot());
+            livingAcquired.setXRot(acquired.getXRot());
+            
+            livingAcquired.yBodyRotO = livingAcquired.yBodyRot;
+            livingAcquired.oAttackAnim = livingAcquired.attackAnim;
+            // limbSwingAmount update shifted to walkAnimation in 1.21
+            livingAcquired.yHeadRotO = livingAcquired.yHeadRot;
+            livingAcquired.yRotO = livingAcquired.getYRot();
+            livingAcquired.xRotO = livingAcquired.getXRot();
+            livingAcquired.deathTime = 0;
+            livingAcquired.hurtTime = 0;
+        }
     }
 }

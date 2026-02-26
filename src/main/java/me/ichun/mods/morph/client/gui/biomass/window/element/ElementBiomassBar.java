@@ -1,6 +1,6 @@
 package me.ichun.mods.morph.client.gui.biomass.window.element;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.gui.GuiGraphics;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.Element;
 import me.ichun.mods.morph.client.gui.biomass.window.WindowHeader;
 import me.ichun.mods.morph.common.Morph;
@@ -16,14 +16,12 @@ public class ElementBiomassBar extends Element<WindowHeader.ViewHeader>
     }
 
     @Override
-    public void render(MatrixStack stack, int mouseX, int mouseY, float partialTick)
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
         int x = getLeft();
         int y = getTop() + (int)((getHeight() - 5) / 2D);
 
-        stack.push();
-        Morph.eventHandlerClient.hudHandler.drawBiomassBar(stack, x, y, partialTick, 1F);
-        stack.pop();
+        Morph.eventHandlerClient.hudHandler.drawBiomassBar(guiGraphics, x, y, partialTick, 1F);
     }
 
     @Nullable

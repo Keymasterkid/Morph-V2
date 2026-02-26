@@ -5,9 +5,9 @@ import me.ichun.mods.morph.api.morph.MorphVariant;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.morph.MorphHandler;
 import me.ichun.mods.morph.common.morph.save.PlayerMorphData;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+// NetworkEvent removed - use IPayload pattern in 1.21
 
 public class PacketMorphInput extends AbstractPacket
 {
@@ -27,16 +27,16 @@ public class PacketMorphInput extends AbstractPacket
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
-        buf.writeString(identifier);
+        buf.writeUtf(identifier);
         buf.writeBoolean(inputFavourite);
         buf.writeBoolean(isFavourite);
         buf.writeBoolean(isDelete);
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
         identifier = readString(buf);
         inputFavourite = buf.readBoolean();
@@ -45,10 +45,10 @@ public class PacketMorphInput extends AbstractPacket
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         context.enqueueWork(() -> {
-            PlayerMorphData morphData = MorphHandler.INSTANCE.getPlayerMorphData(context.getSender());
+            PlayerMorphData morphData = MorphHandler.INSTANCE.getPlayerMorphData(context.player());
             for(MorphVariant morph : morphData.morphs)
             {
                 MorphVariant.Variant variant = morph.getVariantById(identifier);
@@ -58,22 +58,22 @@ public class PacketMorphInput extends AbstractPacket
                     {
                         variant.isFavourite = isFavourite;
 
-                        MorphHandler.INSTANCE.getSaveData().markDirty();
+                        MorphHandler.INSTANCE.getSaveData().setDirty();
                     }
                     else if(isDelete)
                     {
                         if(MorphHandler.INSTANCE.getMorphModeName().equals("classic") && morph.removeVariant(variant))
                         {
-                            MorphHandler.INSTANCE.getSaveData().markDirty();
+                            MorphHandler.INSTANCE.getSaveData().setDirty();
 
-                            Morph.channel.sendTo(new PacketUpdateMorph(morph.write(new CompoundNBT())), context.getSender());
+                            Morph.channel.sendTo(new PacketUpdateMorph(morph.write(new CompoundTag())), (net.minecraft.server.level.ServerPlayer)context.player());
                         }
                     }
                     else
                     {
-                        if(MorphHandler.INSTANCE.canMorph(context.getSender()))
+                        if(MorphHandler.INSTANCE.canMorph(context.player()))
                         {
-                            MorphHandler.INSTANCE.morphTo(context.getSender(), morph.getAsVariant(variant));
+                            MorphHandler.INSTANCE.morphTo((net.minecraft.server.level.ServerPlayer)context.player(), morph.getAsVariant(variant));
                         }
                     }
 

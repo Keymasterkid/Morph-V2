@@ -21,41 +21,48 @@ import me.ichun.mods.morph.common.morph.MorphHandler;
 import me.ichun.mods.morph.common.packet.*;
 import me.ichun.mods.morph.common.resource.ResourceHandler;
 import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.FrameType;
-import net.minecraft.advancements.criterion.*;
-import net.minecraft.block.Blocks;
+import net.minecraft.advancements.AdvancementType;
+import net.minecraft.advancements.critereon.*;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.entity.EntityClassification;
-import net.minecraft.entity.EntityType;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.INBT;
-import net.minecraft.potion.Effects;
-import net.minecraft.util.Direction;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.SoundEvent;
-import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraft.world.World;
-import net.minecraft.world.gen.feature.structure.Structure;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.ExtensionPoint;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.RegistryObject;
-import net.minecraftforge.fml.client.registry.RenderingRegistry;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.*;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Items;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.common.NeoForge;
+// Capability system removed in 1.21 - use Data Attachments
+// CapabilityManager removed in 1.21 - use Data Attachments
+import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+// DistExecutor removed in NeoForge 1.21
+// ExtensionPoint removed in NeoForge 1.21
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.neoforge.registries.DeferredHolder;
+// RenderingRegistry removed - use EntityRenderersEvent.RegisterRenderers
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.*;
+// FMLJavaModLoadingContext removed in 1.21
+import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
+import net.neoforged.neoforge.attachment.IAttachmentSerializer;
+import net.neoforged.neoforge.attachment.IAttachmentHolder;
 
 import javax.annotation.Nullable;
 import java.util.function.BiConsumer;
@@ -76,9 +83,29 @@ public class Morph
     public static EventHandlerClient eventHandlerClient;
     public static EventHandlerServer eventHandlerServer;
 
+    public static final net.neoforged.neoforge.registries.DeferredRegister<net.neoforged.neoforge.attachment.AttachmentType<?>> ATTACHMENT_TYPES = net.neoforged.neoforge.registries.DeferredRegister.create(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.ATTACHMENT_TYPES, "morph");
+    public static final java.util.function.Supplier<net.neoforged.neoforge.attachment.AttachmentType<me.ichun.mods.morph.api.morph.MorphInfo>> MORPH_INFO = ATTACHMENT_TYPES.register("morph_info", () -> net.neoforged.neoforge.attachment.AttachmentType.builder(holder -> {
+        if (holder instanceof Player player) {
+            return (me.ichun.mods.morph.api.morph.MorphInfo) new me.ichun.mods.morph.common.morph.MorphInfoImpl(player);
+        }
+        return null;
+    }).serialize(new IAttachmentSerializer<CompoundTag, me.ichun.mods.morph.api.morph.MorphInfo>() {
+        @Override
+        public me.ichun.mods.morph.api.morph.MorphInfo read(IAttachmentHolder holder, CompoundTag tag, HolderLookup.Provider provider) {
+            me.ichun.mods.morph.api.morph.MorphInfo info = new me.ichun.mods.morph.common.morph.MorphInfoImpl((Player) holder);
+            info.read(tag);
+            return info;
+        }
+
+        @Override
+        public CompoundTag write(me.ichun.mods.morph.api.morph.MorphInfo info, HolderLookup.Provider provider) {
+            return info.write(new CompoundTag());
+        }
+    }).copyOnDeath().build());
+
     public static PacketChannel channel;
 
-    public Morph()
+    public Morph(net.neoforged.bus.api.IEventBus bus, net.neoforged.fml.ModContainer modContainer)
     {
         if(!ResourceHandler.setupEnv())
         {
@@ -88,21 +115,18 @@ public class Morph
 
         configServer = new ConfigServer().init();
 
-        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
-
         Sounds.REGISTRY.register(bus);
+        ATTACHMENT_TYPES.register(bus);
 
         bus.addListener(this::onCommonSetup);
         bus.addListener(this::processIMC);
         bus.addListener(this::finishLoading);
 
-        MinecraftForge.EVENT_BUS.register(eventHandlerServer = new EventHandlerServer());
-
-        MinecraftForge.EVENT_BUS.addListener(Advancements::onGatherData); //Data generation
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(eventHandlerServer = new EventHandlerServer());
 
         MorphApi.setApiImpl(MorphHandler.INSTANCE);
 
-        channel = new PacketChannel(new ResourceLocation(MOD_ID, "channel"), PROTOCOL,
+        channel = new PacketChannel(ResourceLocation.fromNamespaceAndPath("morph", "morph_info"), PROTOCOL,
                 PacketPlayerData.class,
                 PacketRequestMorphInfo.class,
                 PacketMorphInfo.class,
@@ -115,45 +139,33 @@ public class Morph
                 PacketInvalidateClientHealth.class,
                 PacketOpenGenerator.class
         );
+        channel.registerWithBus(bus);
 
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
             configClient = new ConfigClient().init();
-
-            bus.addGenericListener(EntityType.class, Morph.EntityTypes::onEntityTypeRegistry);
+            bus.addListener(Morph.EntityTypes::onEntityTypeRegistry);
             bus.addListener(this::onClientSetup);
-
-            MinecraftForge.EVENT_BUS.register(eventHandlerClient = new EventHandlerClient());
-
-            ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.CONFIGGUIFACTORY, () -> me.ichun.mods.ichunutil.client.core.EventHandlerClient::getConfigGui);
-        });
+            bus.addListener(this::onRegisterRenderers);
+            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(eventHandlerClient = new EventHandlerClient());
+            KeyBinds.init();
+        }
     }
 
     private void onCommonSetup(FMLCommonSetupEvent event)
     {
-        //We don't need a proper IStorage / factory: https://github.com/MinecraftForge/MinecraftForge/issues/7622
-        CapabilityManager.INSTANCE.register(MorphInfo.class, new Capability.IStorage<MorphInfo>() {
-            @Nullable
-            @Override
-            public INBT writeNBT(Capability<MorphInfo> capability, MorphInfo instance, Direction side)
-            {
-                return null;
-            }
-
-            @Override
-            public void readNBT(Capability<MorphInfo> capability, MorphInfo instance, Direction side, INBT nbt)
-            {
-
-            }
-        }, () -> null);
+        // Capability system replaced by Data Attachments in 1.21 - nothing to register here
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void onClientSetup(FMLClientSetupEvent event)
+    private void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event)
     {
-        RenderingRegistry.registerEntityRenderingHandler(EntityTypes.ACQUISITION, new RenderEntityAcquisition.RenderFactory());
-        RenderingRegistry.registerEntityRenderingHandler(EntityTypes.BIOMASS_ABILITY, new RenderEntityBiomassAbility.RenderFactory());
+    }
 
-        KeyBinds.init();
+    @OnlyIn(Dist.CLIENT)
+    private void onRegisterRenderers(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event)
+    {
+        event.registerEntityRenderer(EntityTypes.ACQUISITION, ctx -> new RenderEntityAcquisition(ctx));
+        event.registerEntityRenderer(EntityTypes.BIOMASS_ABILITY, ctx -> new RenderEntityBiomassAbility(ctx));
     }
 
     private void processIMC(InterModProcessEvent event)
@@ -204,7 +216,7 @@ public class Morph
                 MobData data = (MobData)o;
                 if(data.forEntity != null && !data.forEntity.isEmpty())
                 {
-                    ResourceLocation rl = new ResourceLocation(data.forEntity);
+                    ResourceLocation rl = ResourceLocation.parse(data.forEntity);
 
                     MobDataHandler.registerMobData(rl, data);
 
@@ -280,55 +292,41 @@ public class Morph
 
     public static class Advancements implements Consumer<Consumer<Advancement>>
     {
-        @SubscribeEvent
-        public static void onGatherData(GatherDataEvent event)
-        {
-            DataGenerator gen = event.getGenerator();
-            if(event.includeServer()) {
-                gen.addProvider(new AdvancementGen(gen, new Advancements()));
-            }
-        }
-
         @Override
         public void accept(Consumer<Advancement> consumer)
         {
-            //Advancement Data Gen
-            //vanilla
-            Advancement advancement = Advancement.Builder.builder().withDisplay(Blocks.RED_NETHER_BRICKS, new TranslationTextComponent("advancements.nether.root.title"), new TranslationTextComponent("advancements.nether.root.description"), new ResourceLocation("textures/gui/advancements/backgrounds/nether.png"), FrameType.TASK, false, false, false).withCriterion("entered_nether", ChangeDimensionTrigger.Instance.toWorld(World.THE_NETHER)).register(consumer, "nether/root");
-            Advancement advancement2 = Advancement.Builder.builder().withParent(advancement).withDisplay(Blocks.NETHER_BRICKS, new TranslationTextComponent("advancements.nether.find_fortress.title"), new TranslationTextComponent("advancements.nether.find_fortress.description"), (ResourceLocation)null, FrameType.TASK, true, true, false).withCriterion("fortress", PositionTrigger.Instance.forLocation(LocationPredicate.forFeature(Structure.FORTRESS))).register(consumer, "nether/find_fortress");
-
-            //morph
-            Advancement.Builder.builder().withParent(advancement2).withDisplay(Items.WITHER_ROSE, new TranslationTextComponent("morph.advancement.unlock_biomass.title"), new TranslationTextComponent("morph.advancement.unlock_biomass.description"), null, FrameType.CHALLENGE, true, true, false).withCriterion("wither_and_regen", EffectsChangedTrigger.Instance.forEffect(MobEffectsPredicate.any().addEffect(Effects.WITHER).addEffect(Effects.REGENERATION))).register(consumer, UNLOCK_BIOMASS.toString());
+            // Advancement data gen is not implemented for 1.21 compat
         }
 
-        public static final ResourceLocation UNLOCK_BIOMASS = new ResourceLocation("morph", "morph/unlock_biomass");
+        public static final ResourceLocation UNLOCK_BIOMASS = ResourceLocation.fromNamespaceAndPath("morph", "unlock_biomass");
     }
 
     public static class Sounds
     {
-        private static final DeferredRegister<SoundEvent> REGISTRY = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, MOD_ID); //.setRegistryName(new ResourceLocation("torched", "rpt") ??
+        private static final DeferredRegister<SoundEvent> REGISTRY = DeferredRegister.create(net.minecraft.core.registries.Registries.SOUND_EVENT, MOD_ID);
 
-        public static final RegistryObject<SoundEvent> MORPH = REGISTRY.register("morph", () -> new SoundEvent(new ResourceLocation("morph", "morph")));
+        public static final DeferredHolder<SoundEvent, SoundEvent> MORPH = REGISTRY.register("morph", () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath("morph", "morph")));
     }
 
     public static class EntityTypes
     {
         public static EntityType<EntityAcquisition> ACQUISITION;
         public static EntityType<EntityBiomassAbility> BIOMASS_ABILITY;
-        private static void onEntityTypeRegistry(final RegistryEvent.Register<EntityType<?>> entityTypeRegistryEvent) //we're doing it this way because it's a client-side entity and we don't want to sync registry values
+        private static void onEntityTypeRegistry(final RegisterEvent event) //we're doing it this way because it's a client-side entity and we don't want to sync registry values
         {
-            ACQUISITION = EntityType.Builder.create(EntityAcquisition::new, EntityClassification.MISC)
-                    .size(0.1F, 0.1F)
-                    .disableSerialization()
-                    .disableSummoning()
-                    .immuneToFire()
-                    .build("an entity from " + Morph.MOD_NAME + ". Ignore this.");
-            BIOMASS_ABILITY = EntityType.Builder.create(EntityBiomassAbility::new, EntityClassification.MISC)
-                    .size(0.1F, 0.1F)
-                    .disableSerialization()
-                    .disableSummoning()
-                    .immuneToFire()
-                    .build("an entity from " + Morph.MOD_NAME + ". Ignore this.");
+            if (event.getRegistryKey().equals(Registries.ENTITY_TYPE)) {
+                EntityType<EntityAcquisition> acq = EntityType.Builder.<EntityAcquisition>of(EntityAcquisition::new, MobCategory.MISC)
+                        .sized(0.1F, 0.1F)
+                        .build("acquisition");
+                event.register(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MOD_ID, "acquisition"), () -> acq);
+                ACQUISITION = acq;
+
+                EntityType<EntityBiomassAbility> bio = EntityType.Builder.<EntityBiomassAbility>of(EntityBiomassAbility::new, MobCategory.MISC)
+                        .sized(0.1F, 0.1F)
+                        .build("biomass_ability");
+                event.register(Registries.ENTITY_TYPE, ResourceLocation.fromNamespaceAndPath(MOD_ID, "biomass_ability"), () -> bio);
+                BIOMASS_ABILITY = bio;
+            }
         }
     }
 }

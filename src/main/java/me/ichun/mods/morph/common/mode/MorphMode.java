@@ -3,34 +3,34 @@ package me.ichun.mods.morph.common.mode;
 import me.ichun.mods.morph.api.mob.trait.Trait;
 import me.ichun.mods.morph.api.mob.trait.ability.Ability;
 import me.ichun.mods.morph.api.morph.MorphVariant;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 
 public interface MorphMode
 {
-    void handleMurderEvent(ServerPlayerEntity player, LivingEntity living);
+    void handleMurderEvent(ServerPlayer player, LivingEntity living);
 
-    boolean canShowMorphSelector(PlayerEntity player);
+    boolean canShowMorphSelector(Player player);
 
-    boolean canMorph(PlayerEntity player); //if the player has the ability to morph and is not mid-morph
+    boolean canMorph(Player player); //if the player has the ability to morph and is not mid-morph
 
-    boolean canAcquireMorph(PlayerEntity player, LivingEntity living, @Nullable MorphVariant variant); //NOT FOR BLACKLISTING! Variant creation and acquire morph already checks the blacklist. This is for other reasons eg upgrade related stuff or range related stuff
+    boolean canAcquireMorph(Player player, LivingEntity living, @Nullable MorphVariant variant); //NOT FOR BLACKLISTING! Variant creation and acquire morph already checks the blacklist. This is for other reasons eg upgrade related stuff or range related stuff
 
-    int getMorphingDuration(PlayerEntity player);
+    int getMorphingDuration(Player player);
 
-    ArrayList<Trait<?>> getTraitsForVariant(PlayerEntity player, MorphVariant variant); //create a copy of all the applicable traits and sets the player to the provided arg
+    ArrayList<Trait<?>> getTraitsForVariant(Player player, MorphVariant variant); //create a copy of all the applicable traits and sets the player to the provided arg
 
-    boolean canUseAbility(PlayerEntity player, Ability<?> ability);
+    boolean canUseAbility(Player player, Ability<?> ability);
 
-    boolean hasUnlockedBiomass(PlayerEntity player);
+    boolean hasUnlockedBiomass(Player player);
 
-    boolean canAcquireBiomass(PlayerEntity player, LivingEntity living);
+    boolean canAcquireBiomass(Player player, LivingEntity living);
 
-    double getBiomassAmount(PlayerEntity player, LivingEntity living);
+    double getBiomassAmount(Player player, LivingEntity living);
 
     String getModeName();
 }

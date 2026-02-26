@@ -1,6 +1,6 @@
 package me.ichun.mods.morph.client.gui.biomass;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.gui.GuiGraphics;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.ichunutil.client.gui.bns.Workspace;
 import me.ichun.mods.ichunutil.client.gui.bns.window.constraint.Constraint;
@@ -11,8 +11,11 @@ import me.ichun.mods.morph.client.gui.biomass.scene.SceneMorphs;
 import me.ichun.mods.morph.client.gui.biomass.window.WindowHeader;
 import me.ichun.mods.morph.client.gui.biomass.window.WindowSidebar;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.MultiBufferSource;
 
 import java.text.DecimalFormat;
 
@@ -33,7 +36,7 @@ public class WorkspaceMorph extends Workspace
 
     public WorkspaceMorph(Screen lastScreen)
     {
-        super(lastScreen, new TranslationTextComponent("morph.gui.workspace.title"), Morph.configClient.guiMinecraftStyle);
+        super(lastScreen, Component.translatable("morph.gui.workspace.title"), Morph.configClient.guiMinecraftStyle);
 
         windowHeader = new WindowHeader(this);
         windowHeader.size(0, 20);
@@ -73,19 +76,20 @@ public class WorkspaceMorph extends Workspace
     }
 
     @Override
-    public void renderBackground(MatrixStack stack)
+    public void renderWindows(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        this.renderBackground(stack, 0);
-
-        RenderSystem.pushMatrix();
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        for(int i = windows.size() - 1; i >= 0; i--)
+        {
+            windows.get(i).render(guiGraphics, mouseX, mouseY, partialTick);
+        }
     }
 
     @Override
-    public void resetBackground()
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        RenderSystem.popMatrix();
+        if(renderMinecraftStyle > 0)
+        {
+            guiGraphics.fill(0, 0, width, height, 0x80000000);
+        }
     }
 }

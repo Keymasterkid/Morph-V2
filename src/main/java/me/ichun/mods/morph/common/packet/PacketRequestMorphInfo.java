@@ -3,10 +3,10 @@ package me.ichun.mods.morph.common.packet;
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.morph.MorphHandler;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+// NetworkEvent removed - use IPayload pattern in 1.21
 
 import java.util.UUID;
 
@@ -22,25 +22,26 @@ public class PacketRequestMorphInfo extends AbstractPacket
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
-        buf.writeUniqueId(playerId);
+        buf.writeUUID(playerId);
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
-        playerId = buf.readUniqueId();
+        playerId = buf.readUUID();
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         context.enqueueWork(() -> {
-            PlayerEntity player = context.getSender().getServerWorld().getPlayerByUuid(playerId);
-            if(player != null && !player.removed)
+            net.minecraft.server.level.ServerPlayer sender = (net.minecraft.server.level.ServerPlayer) context.player();
+            Player player = sender.getServer().getPlayerList().getPlayer(playerId);
+            if(player != null && !player.isRemoved())
             {
-                Morph.channel.sendTo(new PacketMorphInfo(player.getEntityId(), MorphHandler.INSTANCE.getMorphInfo(player).write(new CompoundNBT())), context.getSender());
+                Morph.channel.sendTo(new PacketMorphInfo(player.getId(), MorphHandler.INSTANCE.getMorphInfo(player).write(new CompoundTag())), sender);
             }
         });
     }

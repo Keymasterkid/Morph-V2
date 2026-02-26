@@ -8,9 +8,9 @@ import me.ichun.mods.morph.api.morph.MorphVariant;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.mob.MobDataHandler;
 import me.ichun.mods.morph.common.morph.MorphHandler;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 public class DisguiseMode implements MorphMode
 {
     @Override
-    public void handleMurderEvent(ServerPlayerEntity player, LivingEntity living)
+    public void handleMurderEvent(ServerPlayer player, LivingEntity living)
     {
         if(canMorph(player))
         {
@@ -29,13 +29,13 @@ public class DisguiseMode implements MorphMode
     }
 
     @Override
-    public boolean canShowMorphSelector(PlayerEntity player)
+    public boolean canShowMorphSelector(Player player)
     {
         return false;
     }
 
     @Override
-    public boolean canMorph(PlayerEntity player)
+    public boolean canMorph(Player player)
     {
         if(!MorphHandler.INSTANCE.isPlayerAllowed(player, Morph.configServer.morphFilterType, Morph.configServer.morphFilterNames))
         {
@@ -54,19 +54,19 @@ public class DisguiseMode implements MorphMode
     }
 
     @Override
-    public boolean canAcquireMorph(PlayerEntity player, LivingEntity living, @Nullable MorphVariant variant)
+    public boolean canAcquireMorph(Player player, LivingEntity living, @Nullable MorphVariant variant)
     {
         return false;
     }
 
     @Override
-    public int getMorphingDuration(PlayerEntity player)
+    public int getMorphingDuration(Player player)
     {
         return Morph.configServer.morphTime;
     }
 
     @Override
-    public ArrayList<Trait<?>> getTraitsForVariant(PlayerEntity player, MorphVariant variant)
+    public ArrayList<Trait<?>> getTraitsForVariant(Player player, MorphVariant variant)
     {
         ArrayList<Trait<?>> traits = new ArrayList<>();
 
@@ -93,25 +93,25 @@ public class DisguiseMode implements MorphMode
     }
 
     @Override
-    public boolean canUseAbility(PlayerEntity player, Ability<?> ability)
+    public boolean canUseAbility(Player player, Ability<?> ability)
     {
         return true;
     }
 
     @Override
-    public boolean hasUnlockedBiomass(PlayerEntity player)
+    public boolean hasUnlockedBiomass(Player player)
     {
         return false;
     }
 
     @Override
-    public boolean canAcquireBiomass(PlayerEntity player, LivingEntity living)
+    public boolean canAcquireBiomass(Player player, LivingEntity living)
     {
         return false;
     }
 
     @Override
-    public double getBiomassAmount(PlayerEntity player, LivingEntity living)
+    public double getBiomassAmount(Player player, LivingEntity living)
     {
         return 0;
     }

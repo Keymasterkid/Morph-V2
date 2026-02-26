@@ -1,13 +1,13 @@
 package me.ichun.mods.morph.client.gui.mob;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.gui.GuiGraphics;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.ichunutil.client.gui.bns.Workspace;
 import me.ichun.mods.ichunutil.client.gui.bns.window.constraint.Constraint;
 import me.ichun.mods.morph.client.gui.mob.window.WindowMobData;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 public class WorkspaceMobData extends Workspace
 {
@@ -17,7 +17,7 @@ public class WorkspaceMobData extends Workspace
 
     public WorkspaceMobData(Screen lastScreen)
     {
-        super(lastScreen, new TranslationTextComponent("morph.gui.workspace.mobData.title"), Morph.configClient.guiMinecraftStyle);
+        super(lastScreen, Component.translatable("morph.gui.workspace.mobData.title"), Morph.configClient.guiMinecraftStyle);
 
         windowMobData = new WindowMobData(this);
         windowMobData.size(0, 20);
@@ -32,11 +32,9 @@ public class WorkspaceMobData extends Workspace
     }
 
     @Override
-    public void renderBackground(MatrixStack stack)
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        this.renderBackground(stack, 0);
-
-        RenderSystem.pushMatrix();
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -45,6 +43,5 @@ public class WorkspaceMobData extends Workspace
     @Override
     public void resetBackground()
     {
-        RenderSystem.popMatrix();
     }
 }

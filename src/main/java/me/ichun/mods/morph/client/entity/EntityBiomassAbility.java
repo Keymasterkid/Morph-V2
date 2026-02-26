@@ -3,17 +3,17 @@ package me.ichun.mods.morph.client.entity;
 import me.ichun.mods.ichunutil.client.tracker.ClientEntityTracker;
 import me.ichun.mods.ichunutil.common.entity.util.EntityHelper;
 import me.ichun.mods.morph.client.render.MorphRenderHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.IPacket;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.World;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.network.NetworkHooks;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 
@@ -21,22 +21,23 @@ import javax.annotation.Nonnull;
 public class EntityBiomassAbility extends Entity
 {
     @Nonnull
-    public PlayerEntity player;
+    public Player player;
 
     public int fadeTime;
     public int solidTime;
     public int age;
-    public MorphRenderHandler.ModelRendererCapture capture = new MorphRenderHandler.ModelRendererCapture();
+    public MorphRenderHandler.ModelPartCapture capture = new MorphRenderHandler.ModelPartCapture();
 
-    public EntityBiomassAbility(EntityType<?> entityTypeIn, World worldIn)
+    public EntityBiomassAbility(EntityType<?> entityTypeIn, Level levelIn)
     {
-        super(entityTypeIn, worldIn);
+        super(entityTypeIn, levelIn);
         setInvisible(true);
         setInvulnerable(true);
-        setEntityId(ClientEntityTracker.getNextEntId());
+        // IDs are managed by Level in 1.21.1, but we might need a custom one for client-only fake entities
+        // However, Entity.setId is final. We'll just rely on the level's ID assignment if possible.
     }
 
-    public EntityBiomassAbility setInfo(@Nonnull PlayerEntity player, int fadeTime, int solidTime)
+    public EntityBiomassAbility setInfo(@Nonnull Player player, int fadeTime, int solidTime)
     {
         this.player = player;
         this.fadeTime = fadeTime;
@@ -54,57 +55,49 @@ public class EntityBiomassAbility extends Entity
 
         age++;
 
-        if(!player.isAlive() || !player.world.getDimensionKey().equals(world.getDimensionKey())) //parent is "dead"
+        if(!player.isAlive() || !player.level().dimension().equals(this.level().dimension())) //parent is "dead"
         {
-            if(player.removed)
+            if(player.isRemoved())
             {
-                remove();
+                this.discard();
             }
         }
         else if(age > (fadeTime * 2) + solidTime)
         {
-            remove();
+            this.discard();
         }
         else //parent is "alive" and safe
         {
-            this.setPosition(player.getPosX(), player.getPosY() + (player.getHeight() / 2D), player.getPosZ());
-            this.setRotation(player.rotationYaw, player.rotationPitch);
+            this.setPos(player.getX(), player.getY() + (player.getDimensions(net.minecraft.world.entity.Pose.STANDING).height() / 2D), player.getZ());
+            this.setRot(player.getYRot(), player.getXRot());
         }
     }
 
-    @Override
-    public AxisAlignedBB getRenderBoundingBox()
+    // @Override
+    public AABB getRenderBoundingBox()
     {
-        return player.getRenderBoundingBox();
+        return player.getBoundingBox();
     }
 
     @Override
-    public boolean isInRangeToRenderDist(double distance) {
-        return player.isInRangeToRenderDist(distance);
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return player.shouldRenderAtSqrDistance(distance);
     }
 
     @Override
-    public float getBrightness()
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {}
+
+    @Override
+    protected void readAdditionalSaveData(CompoundTag compound){}
+
+    @Override
+    protected void addAdditionalSaveData(CompoundTag compound){}
+
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity)
     {
-        return player.getBrightness();
-    }
-
-    @Override
-    protected void registerData(){}
-
-    @Override
-    public boolean writeUnlessRemoved(CompoundNBT compound) { return false; } //disable saving of entity
-
-    @Override
-    protected void readAdditional(CompoundNBT compound){}
-
-    @Override
-    protected void writeAdditional(CompoundNBT compound){}
-
-    @Override
-    public IPacket<?> createSpawnPacket()
-    {
-        return NetworkHooks.getEntitySpawningPacket(this);
+        // Stubbed for client-only entity
+        return null;
     }
 
     public float getSkinAlpha(float partialTick)
@@ -112,11 +105,11 @@ public class EntityBiomassAbility extends Entity
         float alpha;
         if(age < fadeTime)
         {
-            alpha = EntityHelper.sineifyProgress(MathHelper.clamp((age + partialTick) / fadeTime, 0F, 1F));
+            alpha = EntityHelper.sineifyProgress(Mth.clamp((age + partialTick) / fadeTime, 0F, 1F));
         }
         else if(age >= fadeTime + solidTime)
         {
-            alpha = EntityHelper.sineifyProgress(1F - MathHelper.clamp((age - (fadeTime + solidTime) + partialTick) / fadeTime, 0F, 1F));
+            alpha = EntityHelper.sineifyProgress(1F - Mth.clamp((age - (fadeTime + solidTime) + partialTick) / fadeTime, 0F, 1F));
         }
         else
         {
@@ -127,13 +120,14 @@ public class EntityBiomassAbility extends Entity
 
     public void syncWithOriginPosition()
     {
-        this.setLocationAndAngles(player.getPosX(), player.getPosY(), player.getPosZ(), player.rotationYaw, player.rotationPitch);
-        this.lastTickPosX = player.lastTickPosX;
-        this.lastTickPosY = player.lastTickPosY;
-        this.lastTickPosZ = player.lastTickPosZ;
+        this.setPos(player.getX(), player.getY(), player.getZ());
+        this.setRot(player.getYRot(), player.getXRot());
+        this.xo = player.xo;
+        this.yo = player.yo;
+        this.zo = player.zo;
 
-        this.prevPosX = player.prevPosX;
-        this.prevPosY = player.prevPosY;
-        this.prevPosZ = player.prevPosZ;
+        this.xOld = player.xOld;
+        this.yOld = player.yOld;
+        this.zOld = player.zOld;
     }
 }

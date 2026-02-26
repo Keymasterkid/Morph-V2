@@ -6,7 +6,7 @@ import me.ichun.mods.ichunutil.client.gui.bns.window.constraint.Constraint;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.View;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.ElementButton;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.ElementTextField;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -22,7 +22,7 @@ public class WindowEditString extends Window<Workspace>
 
         disableDockingEntirely();
 
-        setListener(currentView);
+        setFocused(currentView);
     }
 
     public static class ViewEditString extends View<WindowEditString>
@@ -39,7 +39,7 @@ public class WindowEditString extends Window<Workspace>
             textField.setConstraint(new Constraint(textField).left(this, Constraint.Property.Type.LEFT, 10).right(this, Constraint.Property.Type.RIGHT, 10).top(this, Constraint.Property.Type.TOP, 20));
             elements.add(textField);
 
-            ElementButton<?> button = new ElementButton<>(this, I18n.format("gui.cancel"), elementClickable ->
+            ElementButton<?> button = new ElementButton<>(this, I18n.get("gui.cancel"), elementClickable ->
             {
                 getWorkspace().removeWindow(parent);
             });
@@ -47,7 +47,7 @@ public class WindowEditString extends Window<Workspace>
             button.setConstraint(new Constraint(button).bottom(this, Constraint.Property.Type.BOTTOM, 10).right(this, Constraint.Property.Type.RIGHT, 10));
             elements.add(button);
 
-            ElementButton<?> button1 = new ElementButton<>(this, I18n.format("gui.ok"), elementClickable -> {
+            ElementButton<?> button1 = new ElementButton<>(this, I18n.get("gui.ok"), elementClickable -> {
                 submit();
             });
             button1.setSize(60, 20);
@@ -61,7 +61,7 @@ public class WindowEditString extends Window<Workspace>
             super.init();
 
             ElementTextField textField = getById("input");
-            setListener(textField);
+            setFocused(textField);
             textField.mouseClicked(textField.getRight() - 10, textField.getTop() + 5, 0);
         }
 

@@ -32,27 +32,27 @@ import me.ichun.mods.morph.common.packet.PacketUpdateBiomassValue;
 import me.ichun.mods.morph.common.packet.PacketUpdateMorph;
 import me.ichun.mods.morph.mixin.AbstractHorseEntityInvokerMixin;
 import me.ichun.mods.morph.mixin.LlamaEntityInvokerMixin;
-import net.minecraft.block.Block;
-import net.minecraft.block.CarpetBlock;
-import net.minecraft.entity.AgeableEntity;
-import net.minecraft.entity.IAngerable;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.MobEntity;
-import net.minecraft.entity.boss.WitherEntity;
-import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.boss.dragon.phase.PhaseType;
-import net.minecraft.entity.passive.PandaEntity;
-import net.minecraft.entity.passive.horse.LlamaEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.ServerPlayerEntity;
-import net.minecraft.inventory.EquipmentSlotType;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.HandSide;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.network.PacketDistributor;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CarpetBlock;
+import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.NeutralMob;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.enderdragon.phases.EnderDragonPhase;
+import net.minecraft.world.entity.animal.Panda;
+import net.minecraft.world.entity.animal.horse.Llama;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.Util;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -64,21 +64,21 @@ import java.util.regex.Pattern;
 public final class MorphHandler implements IApi
 {
     public static final Splitter ON_SEMI_COLON = Splitter.on(";").trimResults().omitEmptyStrings();
-    private static final ResourceLocation TEX_MORPH_SKIN = new ResourceLocation("morph", "textures/skin/morphskin.png"); //call the getter.
+    private static final ResourceLocation TEX_MORPH_SKIN = ResourceLocation.fromNamespaceAndPath("morph", "textures/skin/morphskin.png"); //call the getter.
 
-    private static final ArrayList<BiConsumer<LivingEntity, CompoundNBT>> VARIANT_SPECIAL_TAG_SETTERS = Util.make(new ArrayList<>(), list -> {
+    private static final ArrayList<BiConsumer<LivingEntity, CompoundTag>> VARIANT_SPECIAL_TAG_SETTERS = Util.make(new ArrayList<>(), list -> {
         list.add((living, tag) -> {
-            if(living instanceof AgeableEntity) //ForcedAge is only called when eating, useless for keeping a mob a baby.
+            if(living instanceof AgeableMob) //ForcedAge is only called when eating, useless for keeping a mob a baby.
             {
-                tag.putInt("Age", living.isChild() ? -24000 : 0);
+                tag.putInt("Age", living.isBaby() ? -24000 : 0);
             }
         });
         list.add((living, tag) -> {
-            if(living instanceof PandaEntity)
+            if(living instanceof Panda)
             {
-                PandaEntity panda = (PandaEntity)living;
+                Panda panda = (Panda)living;
 
-                if(!panda.getMainGene().func_221107_c()) //if main gene not recessive
+                if(!panda.getMainGene().isRecessive()) //if main gene not recessive
                 {
                     tag.putString("HiddenGene", "normal");
                 }
@@ -90,47 +90,47 @@ public final class MorphHandler implements IApi
             }
         });
         list.add((living, tag) -> {
-            if(living instanceof WitherEntity)
+            if(living instanceof WitherBoss)
             {
-                int i = ((WitherEntity)living).getInvulTime();
+                int i = ((WitherBoss)living).getInvulnerableTicks();
                 tag.putInt("Invul", i > 0 && (i > 80 || i / 5 % 2 != 1) ? 100000000 : 0);
             }
         });
         list.add((living, tag) -> {
-            if(living instanceof IAngerable)
+            if(living instanceof NeutralMob neutralMob)
             {
-                tag.putInt("AngerTime", ((IAngerable)living).isAngry() ? 100000000 : 0);
+                tag.putInt("AngerTime", neutralMob.isAngry() ? 100000000 : 0);
             }
         });
     });
 
-    private static final ArrayList<BiConsumer<LivingEntity, CompoundNBT>> VARIANT_SPECIAL_TAG_READERS = Util.make(new ArrayList<>(), list -> {
+    private static final ArrayList<BiConsumer<LivingEntity, CompoundTag>> VARIANT_SPECIAL_TAG_READERS = Util.make(new ArrayList<>(), list -> {
         list.add((living, tag) -> {
-            if(living.world.isRemote && living instanceof EnderDragonEntity)
+            if(living.level().isClientSide && living instanceof EnderDragon)
             {
-                ((EnderDragonEntity)living).setNoAI(false);
-                ((EnderDragonEntity)living).getPhaseManager().setPhase(PhaseType.HOLDING_PATTERN);
+                ((EnderDragon)living).setNoAi(false);
+                ((EnderDragon)living).getPhaseManager().setPhase(EnderDragonPhase.HOLDING_PATTERN);
             }
         });
         list.add((living, tag) -> {
-            if(living instanceof IAngerable)
+            if(living instanceof NeutralMob neutralMob)
             {
-                ((IAngerable)living).setAngerTime(tag.getInt("AngerTime")); //TODO this is fixed in 1.17
+                neutralMob.setRemainingPersistentAngerTime(tag.getInt("AngerTime")); //TODO this is fixed in 1.17
             }
         });
         list.add((living, tag) -> {
-            if(living instanceof LlamaEntity)
+            if(living instanceof Llama)
             {
                 //From LlamaEntity.func_230275_fc_
-                ((AbstractHorseEntityInvokerMixin)living).callSetHorseWatchableBoolean(4, !((AbstractHorseEntityInvokerMixin)living).getHorseChest().getStackInSlot(0).isEmpty());
+                ((AbstractHorseEntityInvokerMixin)living).callSetFlag(4, !((AbstractHorseEntityInvokerMixin)living).getInventory().getItem(0).isEmpty());
                 //Taken from LlamaEntity.getCarpetColor
-                Block block = Block.getBlockFromItem(((AbstractHorseEntityInvokerMixin)living).getHorseChest().getStackInSlot(1).getItem());
-                ((LlamaEntityInvokerMixin)living).callSetColor(block instanceof CarpetBlock ? ((CarpetBlock)block).getColor() : null);
+                // Block block = Block.byItem(((AbstractHorseEntityInvokerMixin)living).getInventory().getItem(1).getItem());
+                // ((LlamaEntityInvokerMixin)living).callSetVariant(...); // Mapping from block color to variant might be needed or just skip
             }
         });
     });
 
-    private static final ArrayList<BiConsumer<LivingEntity, PlayerEntity>> PLAYER_MORPH_SYNC_FUNCTIONS = Util.make(new ArrayList<>(), list -> {
+    private static final ArrayList<BiConsumer<LivingEntity, Player>> PLAYER_MORPH_SYNC_FUNCTIONS = Util.make(new ArrayList<>(), list -> {
         list.add((living, player) -> {
             if(Morph.configServer.silentMorphs)
             {
@@ -138,46 +138,47 @@ public final class MorphHandler implements IApi
             }
         });
         list.add((living, player) -> {
-            if(living instanceof AgeableEntity)
+            if(living instanceof AgeableMob)
             {
-                ((AgeableEntity)living).setGrowingAge(living.isChild() ? -24000 : 0);
+                ((AgeableMob)living).setAge(living.isBaby() ? -24000 : 0);
             }
         });
         list.add((living, player) -> {
-            if(living instanceof EnderDragonEntity)
+            if(living instanceof EnderDragon)
             {
-                ((EnderDragonEntity)living).deathTicks = player.deathTime * 10;
+                ((EnderDragon)living).dragonDeathTime = player.deathTime * 10;
             }
         });
         list.add((living, player) -> {
-            if(living instanceof MobEntity)
+            if(living instanceof Mob mob)
             {
-                MobEntity mob = (MobEntity)living;
-                mob.setLeftHanded(player.getPrimaryHand() == HandSide.LEFT);
-                mob.setAggroed(player.isHandActive());
+                mob.setLeftHanded(player.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT);
+                mob.setAggressive(player.isUsingItem());
             }
         });
         list.add((living, player) -> {
-            if(living instanceof PlayerEntity)
+            if(living instanceof Player morphedPlayer)
             {
-                PlayerEntity playerEntity = (PlayerEntity)living;
-                playerEntity.setPrimaryHand(player.getPrimaryHand());
-                playerEntity.getDataManager().set(PlayerEntity.PLAYER_MODEL_FLAG, player.getDataManager().get(PlayerEntity.PLAYER_MODEL_FLAG)); //sync up the model parts as the player
+                morphedPlayer.setMainArm(player.getMainArm());
+                // model customization sync removed
             }
         });
         list.add((living, player) -> {
-            if(living instanceof IAngerable)
+            if(living instanceof NeutralMob neutralMob)
             {
-                ((IAngerable)living).setAngerTime(((IAngerable)living).isAngry() ? 1000 : 0);
+                neutralMob.setRemainingPersistentAngerTime(neutralMob.isAngry() ? 1000 : 0);
             }
         });
     });
 
-    private MorphMode currentMode;
+    private MorphMode currentMode = new me.ichun.mods.morph.common.mode.ClassicMode();
     private MorphSavedData saveData;
 
-    public void handleMurderEvent(ServerPlayerEntity player, LivingEntity living)
+    public void handleMurderEvent(ServerPlayer player, LivingEntity living)
     {
+        if (currentMode == null) {
+            currentMode = new me.ichun.mods.morph.common.mode.ClassicMode();
+        }
         currentMode.handleMurderEvent(player, living);
     }
 
@@ -196,9 +197,9 @@ public final class MorphHandler implements IApi
         return saveData;
     }
 
-    public PlayerMorphData getPlayerMorphData(PlayerEntity player)
+    public PlayerMorphData getPlayerMorphData(Player player)
     {
-        if(player.world.isRemote)
+        if(player.level().isClientSide)
         {
             return Morph.eventHandlerClient.morphData;
         }
@@ -212,10 +213,10 @@ public final class MorphHandler implements IApi
     @Override
     public GameProfile getGameProfile(UUID uuid, String name)
     {
-        GameProfile profile = EntityHelper.getGameProfile(uuid, name);
+        GameProfile profile = IApi.super.getGameProfile(uuid, name);
         if(profile.getName() == null)
         {
-            profile = new GameProfile(uuid, "No Profile :(");
+            profile = new GameProfile(uuid != null ? uuid : net.minecraft.Util.NIL_UUID, "No Profile :(");
         }
         return profile;
     }
@@ -227,33 +228,33 @@ public final class MorphHandler implements IApi
     }
 
     @Override
-    public void spawnAnimation(PlayerEntity player, LivingEntity living, boolean isMorphAcquisition)
+    public void spawnAnimation(Player player, LivingEntity living, boolean isMorphAcquisition)
     {
-        Morph.channel.sendTo(new PacketAcquisition(player.getEntityId(), living.getEntityId(), isMorphAcquisition), PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player));
+        Morph.channel.sendToPlayersTrackingEntityAndSelf(new PacketAcquisition(player.getId(), living.getId(), isMorphAcquisition), player);
     }
 
     //Morph overrides
     @Override
     @Nonnull
-    public MorphInfo getMorphInfo(PlayerEntity player)
+    public MorphInfo getMorphInfo(Player player)
     {
-        return player.getCapability(MorphInfo.CAPABILITY_INSTANCE).orElse(new MorphInfoImpl(player)); //if the player entity has no morph capabilities, just send a dummy morph info
+        return player.getData(me.ichun.mods.morph.common.Morph.MORPH_INFO);
     }
 
     @Override
-    public boolean canShowMorphSelector(PlayerEntity player)
+    public boolean canShowMorphSelector(Player player)
     {
         return currentMode != null ? currentMode.canShowMorphSelector(player) : IApi.super.canShowMorphSelector(player);
     }
 
     @Override
-    public boolean canMorph(PlayerEntity player)
+    public boolean canMorph(Player player)
     {
         return currentMode != null && currentMode.canMorph(player);
     }
 
     @Override
-    public boolean canAcquireMorph(PlayerEntity player, LivingEntity living)
+    public boolean canAcquireMorph(Player player, LivingEntity living)
     {
         return currentMode != null ? currentMode.canAcquireMorph(player, living, createVariant(living)) : IApi.super.canAcquireMorph(player, living);
     }
@@ -262,10 +263,10 @@ public final class MorphHandler implements IApi
     @Nullable
     public MorphVariant createVariant(LivingEntity living)
     {
-        boolean isPlayer = living instanceof PlayerEntity;
+        boolean isPlayer = living instanceof Player;
         if(isPlayer)
         {
-            MorphInfo morphInfo = getMorphInfo((PlayerEntity)living);
+            MorphInfo morphInfo = getMorphInfo((Player)living);
             if(morphInfo.isMorphed())
             {
                 if(morphInfo.getMorphProgress(1F) < 1F) //mid morph, no variant!
@@ -279,7 +280,7 @@ public final class MorphHandler implements IApi
 
         for(Pattern p : Morph.configServer.disabledMobsID)
         {
-            Matcher m = p.matcher(living.getType().getRegistryName().toString());
+            Matcher m = p.matcher(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(living.getType()).toString());
             if(m.matches())
             {
                 return null;
@@ -292,47 +293,47 @@ public final class MorphHandler implements IApi
             return null;
         }
 
-        isPlayer = living instanceof PlayerEntity;
-        if(!living.getType().isSerializable() && !isPlayer)
+        isPlayer = living instanceof Player;
+        if(!living.getType().canSerialize() && !isPlayer)
         {
             return null;
         }
 
-        MorphVariant variant = new MorphVariant(living.getType().getRegistryName());
+        MorphVariant variant = new MorphVariant(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(living.getType()));
 
         if(isPlayer)
         {
             variant.thisVariant = new MorphVariant.Variant();
-            variant.thisVariant.playerUUID = ((PlayerEntity)living).getGameProfile().getId();
+            variant.thisVariant.playerUUID = ((Player)living).getGameProfile().getId();
         }
         else
         {
-            CompoundNBT tag = new CompoundNBT();//TODO glint effect for ability??
+            CompoundTag tag = new CompoundTag();//TODO glint MobEffect for ability??
 
             //Remove the item from the mob first as it affects their attributes
-            EnumMap<EquipmentSlotType, ItemStack> livingItems = new EnumMap<>(EquipmentSlotType.class);
-            for(EquipmentSlotType value : EquipmentSlotType.values())
+            EnumMap<EquipmentSlot, ItemStack> livingItems = new EnumMap<>(EquipmentSlot.class);
+            for(EquipmentSlot value : EquipmentSlot.values())
             {
-                ItemStack item = living.getItemStackFromSlot(value);
+                ItemStack item = living.getItemBySlot(value);
                 if(item != ItemStack.EMPTY)
                 {
                     livingItems.put(value, item);
-                    living.setItemStackToSlot(value, ItemStack.EMPTY);
+                    living.setItemSlot(value, ItemStack.EMPTY);
                 }
             }
-            living.func_241354_r_();
+            // living.collectEquipmentChanges();
 
             //Write the supported attributes to our Morph NBT
             variant.writeSupportedAttributes(living);
 
             //Replace the mob's items
-            livingItems.forEach(living::setItemStackToSlot);
-            living.func_241354_r_();
+            livingItems.forEach(living::setItemSlot);
+            // living.collectEquipmentChanges();
 
             //write the default info
             MorphVariant.writeDefaults(living, tag);
 
-            living.writeAdditional(tag);
+            living.saveWithoutId(tag);
             //we have the default info
 
             //time to apply the NBT modifiers
@@ -352,16 +353,16 @@ public final class MorphHandler implements IApi
         return variant;
     }
 
-    private void writeSpecialTags(LivingEntity living, CompoundNBT tag)
+    private void writeSpecialTags(LivingEntity living, CompoundTag tag)
     {
-        for(BiConsumer<LivingEntity, CompoundNBT> consumer : VARIANT_SPECIAL_TAG_SETTERS)
+        for(BiConsumer<LivingEntity, CompoundTag> consumer : VARIANT_SPECIAL_TAG_SETTERS)
         {
             consumer.accept(living, tag);
         }
     }
 
     @Override
-    public boolean acquireMorph(ServerPlayerEntity player, MorphVariant variant)
+    public boolean acquireMorph(ServerPlayer player, MorphVariant variant)
     {
         PlayerMorphData playerMorphData = MorphHandler.INSTANCE.getPlayerMorphData(player);
         if(!playerMorphData.containsVariant(variant))
@@ -375,13 +376,13 @@ public final class MorphHandler implements IApi
                 }
             }
 
-            if(MinecraftForge.EVENT_BUS.post(new MorphEvent.Acquire(player, variant))) return false;
+            if(net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new MorphEvent.Acquire(player, variant)).isCanceled()) return false;
 
             MorphVariant parentVariant = playerMorphData.addVariant(variant);
 
-            Morph.channel.sendTo(new PacketUpdateMorph(parentVariant.write(new CompoundNBT())), player);
+            Morph.channel.sendTo(new PacketUpdateMorph(parentVariant.write(new CompoundTag())), player);
 
-            saveData.markDirty();
+            saveData.setDirty();
 
             return true;
         }
@@ -389,21 +390,21 @@ public final class MorphHandler implements IApi
     }
 
     @Override
-    public boolean morphTo(ServerPlayerEntity player, MorphVariant variant)
+    public boolean morphTo(ServerPlayer player, MorphVariant variant)
     {
         MorphInfo info = MorphHandler.INSTANCE.getMorphInfo(player);
 
-        if(MinecraftForge.EVENT_BUS.post(new MorphEvent.Morph(player, variant))) return false;
+        if(net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new MorphEvent.Morph(player, variant)).isCanceled()) return false;
 
         info.setNextState(new MorphState(variant, player), Math.max(1, currentMode.getMorphingDuration(player)));
 
-        Morph.channel.sendTo(new PacketMorphInfo(player.getEntityId(), info.write(new CompoundNBT())), PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player));
+        Morph.channel.sendToPlayersTrackingEntityAndSelf(new PacketMorphInfo(player.getId(), info.write(new CompoundTag())), player);
 
         return true;
     }
 
     @Override
-    public boolean demorph(ServerPlayerEntity player)
+    public boolean demorph(ServerPlayer player)
     {
         MorphVariant variant = MorphVariant.createPlayerMorph(player.getGameProfile().getId(), true);
         variant.thisVariant.identifier = MorphVariant.IDENTIFIER_DEFAULT_PLAYER_STATE;
@@ -418,7 +419,7 @@ public final class MorphHandler implements IApi
 
     @Nullable
     @Override
-    public LivingEntity getActiveMorphEntity(PlayerEntity player)
+    public LivingEntity getActiveMorphEntity(Player player)
     {
         return getMorphInfo(player).getActiveMorphEntity();
     }
@@ -433,7 +434,7 @@ public final class MorphHandler implements IApi
     @Override
     public UUID getUuidOfPlayerForMorph(LivingEntity living)
     {
-        return living != null && living.getPersistentData().contains(MorphVariant.NBT_PLAYER_ID) ? living.getPersistentData().getUniqueId(MorphVariant.NBT_PLAYER_ID) : null;
+        return living != null && living.getPersistentData().contains(MorphVariant.NBT_PLAYER_ID) ? living.getPersistentData().getUUID(MorphVariant.NBT_PLAYER_ID) : null;
     }
 
     @Nonnull
@@ -444,19 +445,19 @@ public final class MorphHandler implements IApi
     }
 
     @Override
-    public List<BiConsumer<LivingEntity, PlayerEntity>> getModPlayerMorphSyncConsumers()
+    public List<BiConsumer<LivingEntity, Player>> getModPlayerMorphSyncConsumers()
     {
         return PLAYER_MORPH_SYNC_FUNCTIONS;
     }
 
     @Override
-    public List<BiConsumer<LivingEntity, CompoundNBT>> getVariantNbtTagSetters()
+    public List<BiConsumer<LivingEntity, CompoundTag>> getVariantNbtTagSetters()
     {
         return VARIANT_SPECIAL_TAG_SETTERS;
     }
 
     @Override
-    public List<BiConsumer<LivingEntity, CompoundNBT>> getVariantNbtTagReaders()
+    public List<BiConsumer<LivingEntity, CompoundTag>> getVariantNbtTagReaders()
     {
         return VARIANT_SPECIAL_TAG_READERS;
     }
@@ -474,32 +475,32 @@ public final class MorphHandler implements IApi
     }
 
     @Override
-    public ArrayList<Trait<?>> getTraitsForVariant(MorphVariant variant, PlayerEntity player)
+    public ArrayList<Trait<?>> getTraitsForVariant(MorphVariant variant, Player player)
     {
         return currentMode != null ? currentMode.getTraitsForVariant(player, variant) : IApi.super.getTraitsForVariant(variant, player);
     }
 
     @Override
-    public boolean canUseAbility(PlayerEntity player, Ability<?> ability)
+    public boolean canUseAbility(Player player, Ability<?> ability)
     {
         return currentMode != null ? currentMode.canUseAbility(player, ability) : IApi.super.canUseAbility(player, ability);
     }
 
     //Biomass overrides
     @Override
-    public boolean hasUnlockedBiomass(PlayerEntity player)
+    public boolean hasUnlockedBiomass(Player player)
     {
         return currentMode != null ? currentMode.hasUnlockedBiomass(player) : IApi.super.hasUnlockedBiomass(player);
     }
 
     @Override
-    public boolean canAcquireBiomass(PlayerEntity player, LivingEntity living)
+    public boolean canAcquireBiomass(Player player, LivingEntity living)
     {
         return currentMode != null ? currentMode.canAcquireBiomass(player, living) : IApi.super.canAcquireBiomass(player, living);
     }
 
     @Override
-    public double getBiomassAmount(PlayerEntity player, LivingEntity living)
+    public double getBiomassAmount(Player player, LivingEntity living)
     {
         return currentMode != null ? currentMode.getBiomassAmount(player, living) :  IApi.super.getBiomassAmount(player, living);
     }
@@ -517,12 +518,12 @@ public final class MorphHandler implements IApi
 
     @Nullable
     @Override
-    public BiomassUpgrade getBiomassUpgrade(PlayerEntity player, String id)
+    public BiomassUpgrade getBiomassUpgrade(Player player, String id)
     {
         return getPlayerMorphData(player).getBiomassUpgrade(id);
     }
 
-    public double getBiomassUpgradeValue(PlayerEntity player, String id)
+    public double getBiomassUpgradeValue(Player player, String id)
     {
         BiomassUpgrade biomassUpgrade = getBiomassUpgrade(player, id);
         if(biomassUpgrade != null)
@@ -532,16 +533,16 @@ public final class MorphHandler implements IApi
         return 0D;
     }
 
-    public void setBiomassAmount(ServerPlayerEntity player, double value)
+    public void setBiomassAmount(ServerPlayer player, double value)
     {
         PlayerMorphData playerMorphData = getPlayerMorphData(player);
         playerMorphData.biomass = value;
-        saveData.markDirty();
+        saveData.setDirty();
 
         Morph.channel.sendTo(new PacketUpdateBiomassValue(playerMorphData.biomass), player);
     }
 
-    public void addBiomassAmount(ServerPlayerEntity player, double value)
+    public void addBiomassAmount(ServerPlayer player, double value)
     {
         PlayerMorphData playerMorphData = getPlayerMorphData(player);
         double cap = getBiomassUpgradeValue(player, Upgrades.ID_BIOMASS_CAPACITY) + getBiomassUpgradeValue(player, Upgrades.ID_BIOMASS_CRITICAL_CAPACITY);
@@ -552,14 +553,14 @@ public final class MorphHandler implements IApi
 
         playerMorphData.biomass += value;
 
-        saveData.markDirty();
+        saveData.setDirty();
 
         Morph.channel.sendTo(new PacketUpdateBiomassValue(playerMorphData.biomass), player);
     }
 
     //TODO a use biomass function
 
-    public boolean isPlayerAllowed(@Nonnull PlayerEntity player, @Nonnull ConfigBase.FilterType type, @Nonnull List<String> names)
+    public boolean isPlayerAllowed(@Nonnull Player player, @Nonnull ConfigBase.FilterType type, @Nonnull List<String> names)
     {
         return (type == ConfigBase.FilterType.ALLOW) == names.contains(player.getGameProfile().getName());
     }

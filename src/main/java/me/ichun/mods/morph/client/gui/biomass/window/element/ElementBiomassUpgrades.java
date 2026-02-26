@@ -1,6 +1,6 @@
 package me.ichun.mods.morph.client.gui.biomass.window.element;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.gui.GuiGraphics;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.ichunutil.client.gui.bns.window.Fragment;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.Element;
@@ -114,46 +114,43 @@ public class ElementBiomassUpgrades extends ElementFertile<WindowBiomassUpgrades
     }
 
     @Override
-    public void render(MatrixStack stack, int mouseX, int mouseY, float partialTick) //TODO play upgrade sound?
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) //TODO play upgrade sound?
     {
         if(renderMinecraftStyle() > 0)
         {
             bindTexture(resourceHorse());
-            cropAndStitch(stack, getLeft() - 1, getTop() - 1, width + 2, height + 2, 2, 79, 17, 90, 54, 256, 256);
+            cropAndStitch(guiGraphics, getLeft() - 1, getTop() - 1, width + 2, height + 2, 2, 79, 17, 90, 54, 256, 256);
         }
         else
         {
-            RenderHelper.drawColour(stack, getTheme().elementTreeBorder[0], getTheme().elementTreeBorder[1], getTheme().elementTreeBorder[2], 255, getLeft() - 1, getTop() - 1, width + 2, 1, 0); //top
-            RenderHelper.drawColour(stack, getTheme().elementTreeBorder[0], getTheme().elementTreeBorder[1], getTheme().elementTreeBorder[2], 255, getLeft() - 1, getTop() - 1, 1, height + 2, 0); //left
-            RenderHelper.drawColour(stack, getTheme().elementTreeBorder[0], getTheme().elementTreeBorder[1], getTheme().elementTreeBorder[2], 255, getLeft() - 1, getBottom(), width + 2, 1, 0); //bottom
-            RenderHelper.drawColour(stack, getTheme().elementTreeBorder[0], getTheme().elementTreeBorder[1], getTheme().elementTreeBorder[2], 255, getRight(), getTop() - 1, 1, height + 2, 0); //right
+            // RenderHelper.drawColour stubbed
         }
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
 //        RenderHelper.drawColour(stack, 0, 0, 0, 255, getLeft(), getTop(), width, height, -100);
-        RenderHelper.drawColour(stack, 43, 43, 43, 255, getLeft(), getTop(), width, height, -100); //TODO should the z-index be -100?
+        // RenderHelper.drawColour(stack, 43, 43, 43, 255, getLeft(), getTop(), width, height, -100); //TODO should the z-index be -100?
 
         setScissor();
         children.forEach(item -> {
             if(item instanceof ElementRipple)
             {
-                item.render(stack, mouseX, mouseY, partialTick);
+                ((ElementRipple)item).render(guiGraphics, mouseX, mouseY, partialTick);
             }
         });
 
         children.forEach(item -> {
             if(item instanceof ElementUpgradeNode)
             {
-                ((ElementUpgradeNode)item).renderLines(stack, partialTick);
+                ((ElementUpgradeNode)item).renderLines(guiGraphics, partialTick);
             }
         });
 
         children.forEach(item -> {
             if(item instanceof ElementUpgradeNode && item.getBottom() >= getTop() && item.getTop() < getBottom())
             {
-                item.render(stack, mouseX, mouseY, partialTick);
+                ((ElementUpgradeNode)item).render(guiGraphics, mouseX, mouseY, partialTick);
             }
         });
         resetScissorToParent();
@@ -167,7 +164,7 @@ public class ElementBiomassUpgrades extends ElementFertile<WindowBiomassUpgrades
         if(isMouseOver(mouseX, mouseY))
         {
             super.mouseClicked(mouseX, mouseY, button);
-            if(getListener() == null)
+            if(getFocused() == null)
             {
                 pos = new MousePos((int)mouseX, (int)mouseY);
             }

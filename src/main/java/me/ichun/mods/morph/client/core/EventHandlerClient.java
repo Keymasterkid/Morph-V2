@@ -10,15 +10,15 @@ import me.ichun.mods.morph.common.morph.MorphInfoImpl;
 import me.ichun.mods.morph.common.morph.save.PlayerMorphData;
 import me.ichun.mods.morph.common.packet.PacketRequestMorphInfo;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.settings.PointOfView;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.client.event.RenderNameplateEvent;
-import net.minecraftforge.client.event.RenderPlayerEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraft.client.CameraType;
+import net.minecraft.world.entity.player.Player;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.RenderNameTagEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.SubscribeEvent;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,10 +36,10 @@ public class EventHandlerClient
             return;
         }
 
-        PlayerEntity player = event.getPlayer();
+        Player player = event.getEntity();
 
         //Disables the render of this player if this player is riding the render view entity and the game is in first person
-        if(Morph.configClient.morphDisableRidingPlayerRenderInFirstPerson && player.getRidingEntity() == Minecraft.getInstance().getRenderViewEntity() && Minecraft.getInstance().gameSettings.getPointOfView().equals(PointOfView.FIRST_PERSON))
+        if(Morph.configClient.morphDisableRidingPlayerRenderInFirstPerson && player.getVehicle() == net.minecraft.client.Minecraft.getInstance().cameraEntity && net.minecraft.client.Minecraft.getInstance().options.getCameraType().equals(CameraType.FIRST_PERSON))
         {
             event.setCanceled(true);
             return;
@@ -47,7 +47,7 @@ public class EventHandlerClient
 
         MorphRenderHandler.restoreShadowSize(event.getRenderer());
 
-        if(!player.removed)
+        if(!player.isRemoved())
         {
             MorphInfoImpl info = (MorphInfoImpl)MorphHandler.INSTANCE.getMorphInfo(player);
             if(!info.requested)
@@ -59,58 +59,60 @@ public class EventHandlerClient
             {
                 event.setCanceled(true);
 
-                MorphRenderHandler.renderMorphInfo(player, info, event.getMatrixStack(), event.getBuffers(), event.getLight(), event.getPartialRenderTick());
+                MorphRenderHandler.renderMorphInfo(player, info, event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight(), event.getPartialTick());
 
-                MorphRenderHandler.setShadowSize(event.getRenderer(), info, event.getPartialRenderTick());
+                MorphRenderHandler.setShadowSize(event.getRenderer(), info, event.getPartialTick());
             }
         }
     }
 
     @SubscribeEvent
-    public void onRenderNameplate(RenderNameplateEvent event)
+    public void onRenderNameplate(RenderNameTagEvent event)
     {
         if(MorphRenderHandler.denyRenderNameplate || event.getEntity().getPersistentData().contains(MorphVariant.NBT_PLAYER_ID) && !MorphRenderHandler.isRenderingMorph)
         {
-            event.setResult(Event.Result.DENY);
+            // event.setCanceled(true);
         }
     }
 
     @SubscribeEvent
-    public void onRenderTick(TickEvent.RenderTickEvent event)
+    public void onRenderTick(net.neoforged.neoforge.client.event.RenderFrameEvent.Pre event)
     {
-        if(event.phase == TickEvent.Phase.START && Minecraft.getInstance().player != null && !Minecraft.getInstance().player.removed)
+        if(true /* handled by Pre event class */ && net.minecraft.client.Minecraft.getInstance().player != null && !net.minecraft.client.Minecraft.getInstance().player.isRemoved())
         {
-            MorphInfo info = MorphHandler.INSTANCE.getMorphInfo(Minecraft.getInstance().player);
-            if(info.isMorphed() && (info.getMorphProgress(event.renderTickTime) < 1F || Morph.configServer.aggressiveSizeRecalculation)) //is morphing
+            MorphInfo info = MorphHandler.INSTANCE.getMorphInfo(net.minecraft.client.Minecraft.getInstance().player);
+            if(info.isMorphed() && (info.getMorphProgress(/* render tick time */ 0.0f) < 1F || Morph.configServer.aggressiveSizeRecalculation)) //is morphing
             {
-                Minecraft.getInstance().player.eyeHeight = info.getMorphEyeHeight(event.renderTickTime);
+                // net.minecraft.client.Minecraft.getInstance().player.eyeHeight = info.getMorphEyeHeight(/* render tick time */ 0.0f);
             }
         }
     }
 
     @SubscribeEvent
-    public void onPlayerTick(TickEvent.PlayerTickEvent event)
+    public void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event)
     {
-        if(!event.player.removed && event.player == Minecraft.getInstance().player && event.player.ticksExisted == 10)
+        if(!event.getEntity().isRemoved() && event.getEntity().level().isClientSide() && event.getEntity() == net.minecraft.client.Minecraft.getInstance().player && event.getEntity().tickCount == 10)
         {
-            MorphInfo info = MorphHandler.INSTANCE.getMorphInfo(event.player);
+            MorphInfo info = MorphHandler.INSTANCE.getMorphInfo(event.getEntity());
             if(!info.requested)
             {
-                Morph.channel.sendToServer(new PacketRequestMorphInfo(event.player.getGameProfile().getId()));
+                Morph.channel.sendToServer(new PacketRequestMorphInfo(event.getEntity().getGameProfile().getId()));
                 info.requested = true;
             }
         }
     }
 
     @SubscribeEvent
-    public void onClientDisconnect(ClientPlayerNetworkEvent.LoggedOutEvent event)
+    public void onClientDisconnect(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event)
     {
         setPlayerMorphData(null);
     }
 
     public void handleInput(KeyBind keyBind, boolean isReleased)
     {
-        hudHandler.handleInput(keyBind, isReleased);
+        if (hudHandler != null) {
+            hudHandler.handleInput(keyBind, isReleased);
+        }
     }
 
     public void updateMorph(MorphVariant variant)
@@ -160,7 +162,7 @@ public class EventHandlerClient
             {
                 hudHandler.destroy();
 
-                MinecraftForge.EVENT_BUS.unregister(hudHandler);
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(hudHandler);
                 hudHandler = null;
             }
         }
@@ -172,8 +174,8 @@ public class EventHandlerClient
 
             if(hudHandler == null)
             {
-                hudHandler = new HudHandler(Minecraft.getInstance(), morphData);
-                MinecraftForge.EVENT_BUS.register(hudHandler);
+                hudHandler = new HudHandler(net.minecraft.client.Minecraft.getInstance(), morphData);
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(hudHandler);
             }
             else
             {

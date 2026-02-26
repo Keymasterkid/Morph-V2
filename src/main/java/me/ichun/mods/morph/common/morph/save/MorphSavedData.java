@@ -1,46 +1,45 @@
 package me.ichun.mods.morph.common.morph.save;
 
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.world.storage.WorldSavedData;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class MorphSavedData extends WorldSavedData
+public class MorphSavedData extends SavedData
 {
     public static final String ID = "morph_save";
     public HashMap<UUID, PlayerMorphData> playerMorphs = new HashMap<>();
 
     public MorphSavedData()
     {
-        super(ID);
     }
 
-    @Override
-    public void read(CompoundNBT tag)
+    public static MorphSavedData load(CompoundTag tag, HolderLookup.Provider provider)
     {
-        playerMorphs.clear();
-
+        MorphSavedData data = new MorphSavedData();
         int count = tag.getInt("count");
         for(int i = 0; i < count; i++)
         {
             PlayerMorphData playerData = new PlayerMorphData();
             playerData.read(tag.getCompound("morph_" + i));
 
-            playerMorphs.put(playerData.owner, playerData);
+            data.playerMorphs.put(playerData.owner, playerData);
         }
+        return data;
     }
 
     @Override
-    public CompoundNBT write(CompoundNBT tag)
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider)
     {
         tag.putInt("count", playerMorphs.size());
 
         int i = 0;
         for(Map.Entry<UUID, PlayerMorphData> entry : playerMorphs.entrySet())
         {
-            tag.put("morph_" + i, entry.getValue().write(new CompoundNBT()));
+            tag.put("morph_" + i, entry.getValue().write(new CompoundTag()));
             i++;
         }
 

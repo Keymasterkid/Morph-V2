@@ -1,0 +1,28 @@
+modLoader="javafml"
+loaderVersion="[4,)" #neoforge version dep
+license="GNU Lesser General Public License v3.0"
+issueTrackerURL="https://github.com/iChun/Morph/issues"
+
+[[mods]]
+    modId="morph"
+    version="${file.jarVersion}" #mandatory
+    displayName="Morph"
+    displayURL="https://ichun.me/mods/morph/"
+    authors="iChun"
+    description='''
+    Kill other entities and take their form.
+    '''
+
+[[mods]]
+    modId="ichunutil"
+    version="${file.jarVersion}" #mandatory
+    displayName="iChunUtil"
+    authors="iChun"
+    description='''
+    A library mod used by iChun's mods.
+    '''
+
+
+
+[[mixins]]
+config = "morph.mixins.json"

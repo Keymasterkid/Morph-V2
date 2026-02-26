@@ -2,8 +2,8 @@ package me.ichun.mods.morph.common.packet;
 
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.network.FriendlyByteBuf;
+// NetworkEvent removed - use IPayload pattern in 1.21
 
 public class PacketUpdateBiomassValue extends AbstractPacket
 {
@@ -17,19 +17,19 @@ public class PacketUpdateBiomassValue extends AbstractPacket
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
         buf.writeDouble(value);
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
         value = buf.readDouble();
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         context.enqueueWork(() -> {
             Morph.eventHandlerClient.morphData.biomass = value;

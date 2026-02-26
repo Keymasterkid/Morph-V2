@@ -4,14 +4,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import me.ichun.mods.ichunutil.common.util.IOUtil;
 import me.ichun.mods.morph.api.mob.trait.Trait;
-import me.ichun.mods.morph.client.render.hand.HandHandler;
+// HandHandler import removed - class missing
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.mob.MobDataHandler;
 import me.ichun.mods.morph.common.mob.TraitHandler;
 import me.ichun.mods.morph.common.morph.nbt.NbtHandler;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.loading.FMLPaths;
+import net.neoforged.api.distmarker.Dist;
+// DistExecutor removed in NeoForge 1.21
+import net.neoforged.fml.loading.FMLPaths;
 import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
@@ -77,7 +77,9 @@ public class ResourceHandler
         //This data is reliant on Class names.
         NbtHandler.loadNbtModifiers();
 
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> HandHandler::loadHandInfos); //load the hand infos. Only required on the client
+        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+            // me.ichun.mods.morph.client.render.hand.HandHandler.loadInteractionHandInfos();
+        }
 
         //This data rely on entity type resource location
         MobDataHandler.loadMobData();

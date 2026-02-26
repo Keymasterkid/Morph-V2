@@ -3,35 +3,35 @@ package me.ichun.mods.morph.common.packet;
 import me.ichun.mods.ichunutil.common.network.AbstractPacket;
 import me.ichun.mods.morph.common.Morph;
 import me.ichun.mods.morph.common.morph.save.PlayerMorphData;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.network.PacketBuffer;
-import net.minecraftforge.fml.network.NetworkEvent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+// NetworkEvent removed - use IPayload pattern in 1.21
 
 public class PacketPlayerData extends AbstractPacket
 {
-    public CompoundNBT nbt;
+    public CompoundTag nbt;
 
     public PacketPlayerData(){}
 
-    public PacketPlayerData(CompoundNBT nbt)
+    public PacketPlayerData(CompoundTag nbt)
     {
         this.nbt = nbt;
     }
 
     @Override
-    public void writeTo(PacketBuffer buf)
+    public void writeTo(FriendlyByteBuf buf)
     {
-        buf.writeCompoundTag(nbt);
+        buf.writeNbt(nbt);
     }
 
     @Override
-    public void readFrom(PacketBuffer buf)
+    public void readFrom(FriendlyByteBuf buf)
     {
-        nbt = buf.readCompoundTag();
+        nbt = buf.readNbt();
     }
 
     @Override
-    public void process(NetworkEvent.Context context)
+    public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         PlayerMorphData playerMorphData = new PlayerMorphData();
         playerMorphData.read(nbt);

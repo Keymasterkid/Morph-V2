@@ -1,31 +1,31 @@
 package me.ichun.mods.morph.mixin;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraftforge.client.gui.ForgeIngameGui;
+import net.minecraft.client.gui.Gui;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ForgeIngameGui.class) //I'm sorry Forge!!
+@Mixin(net.minecraft.client.gui.Gui.class) //I'm sorry NeoForge!!
 public abstract class ForgeIngameGuiMixin
 {
-    @Inject(method = "renderIngameGui", at = @At(value = "INVOKE", target = "Ljava/util/Random;setSeed(J)V"))
-    public void renderIngameGuiPre(MatrixStack mStack, float partialTicks, CallbackInfo ci)
+    @Inject(method = "render", at = @At("HEAD"))
+    public void renderPre(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.DeltaTracker deltaTracker, CallbackInfo ci)
     {
-        if(Morph.eventHandlerClient.hudHandler != null)
+        if(Morph.eventHandlerClient != null && Morph.eventHandlerClient.hudHandler != null)
         {
-            Morph.eventHandlerClient.hudHandler.preDrawBiomassBar(mStack, partialTicks);
+            // Morph.eventHandlerClient.hudHandler.preDrawBiomassBar(guiGraphics, deltaTracker);
         }
     }
 
-    @Inject(method = "renderIngameGui", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/gui/ForgeIngameGui;renderSleepFade(IILcom/mojang/blaze3d/matrix/MatrixStack;)V"))
-    public void renderIngameGuiPost(MatrixStack mStack, float partialTicks, CallbackInfo ci)
+    @Inject(method = "render", at = @At("RETURN"))
+    public void renderPost(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.DeltaTracker deltaTracker, CallbackInfo ci)
     {
-        if(Morph.eventHandlerClient.hudHandler != null)
+        if(Morph.eventHandlerClient != null && Morph.eventHandlerClient.hudHandler != null)
         {
-            Morph.eventHandlerClient.hudHandler.postDrawBiomassBar(mStack, partialTicks);
+            // Morph.eventHandlerClient.hudHandler.postDrawBiomassBar(guiGraphics, deltaTracker);
         }
     }
 }

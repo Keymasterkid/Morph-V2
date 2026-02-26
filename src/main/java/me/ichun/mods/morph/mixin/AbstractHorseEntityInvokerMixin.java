@@ -1,17 +1,17 @@
 package me.ichun.mods.morph.mixin;
 
-import net.minecraft.entity.passive.horse.AbstractHorseEntity;
-import net.minecraft.inventory.Inventory;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.SimpleContainer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(AbstractHorseEntity.class)
+@Mixin(AbstractHorse.class)
 public interface AbstractHorseEntityInvokerMixin
 {
-    @Accessor
-    Inventory getHorseChest();
+    @Accessor("inventory")
+    net.minecraft.world.SimpleContainer getInventory();
 
-    @Invoker
-    void callSetHorseWatchableBoolean(int id, boolean flag);
+    @Invoker("setFlag")
+    void callSetFlag(int id, boolean flag);
 }

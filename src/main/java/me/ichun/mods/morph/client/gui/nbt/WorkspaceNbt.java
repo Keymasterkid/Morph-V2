@@ -1,14 +1,15 @@
 package me.ichun.mods.morph.client.gui.nbt;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.ichunutil.client.gui.bns.Workspace;
 import me.ichun.mods.ichunutil.client.gui.bns.window.constraint.Constraint;
 import me.ichun.mods.morph.client.gui.nbt.window.WindowNbt;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.GuiGraphics;
 
 public class WorkspaceNbt extends Workspace
 {
@@ -19,7 +20,7 @@ public class WorkspaceNbt extends Workspace
 
     public WorkspaceNbt(Screen lastScreen, LivingEntity target)
     {
-        super(lastScreen, new TranslationTextComponent("morph.gui.workspace.nbt.title"), Morph.configClient.guiMinecraftStyle);
+        super(lastScreen, Component.translatable("morph.gui.workspace.nbt.title"), Morph.configClient.guiMinecraftStyle);
 
         this.target = target;
 
@@ -36,11 +37,9 @@ public class WorkspaceNbt extends Workspace
     }
 
     @Override
-    public void renderBackground(MatrixStack stack)
+    public void renderBackground(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        this.renderBackground(stack, 0);
-
-        RenderSystem.pushMatrix();
+        super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -49,6 +48,5 @@ public class WorkspaceNbt extends Workspace
     @Override
     public void resetBackground()
     {
-        RenderSystem.popMatrix();
     }
 }

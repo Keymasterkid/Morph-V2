@@ -1,6 +1,6 @@
 package me.ichun.mods.morph.client.gui.biomass.window;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import net.minecraft.client.gui.GuiGraphics;
 import me.ichun.mods.ichunutil.client.gui.bns.window.Window;
 import me.ichun.mods.ichunutil.client.gui.bns.window.constraint.Constraint;
 import me.ichun.mods.ichunutil.client.gui.bns.window.view.View;
@@ -10,7 +10,7 @@ import me.ichun.mods.ichunutil.client.gui.bns.window.view.element.ElementToggle;
 import me.ichun.mods.morph.client.gui.biomass.WorkspaceMorph;
 import me.ichun.mods.morph.client.gui.biomass.window.element.ElementBiomassBar;
 import me.ichun.mods.morph.common.Morph;
-import net.minecraft.client.resources.I18n;
+import net.minecraft.client.resources.language.I18n;
 
 import javax.annotation.Nonnull;
 
@@ -52,16 +52,16 @@ public class WindowHeader extends Window<WorkspaceMorph>
         }
 
         @Override
-        public void render(MatrixStack stack, int mouseX, int mouseY, float partialTick)
+        public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
         {
             ElementTextWrapper text = getById("text");
             String weightKg = WorkspaceMorph.FORMATTER.format(Morph.eventHandlerClient.morphData.biomass);
             String weightLb = WorkspaceMorph.FORMATTER.format(Morph.eventHandlerClient.morphData.biomass * 2.20462D);
             text.setText(weightKg + " kg");
-            text.setTooltip(I18n.format("morph.gui.text.weight.tooltip", weightKg, weightLb));
+            text.setTooltip(I18n.get("morph.gui.text.weight.tooltip", weightKg, weightLb));
             text.init();
 
-            super.render(stack, mouseX, mouseY, partialTick);
+            super.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
         public void deselectAllExcept(ElementToggle toggle)
