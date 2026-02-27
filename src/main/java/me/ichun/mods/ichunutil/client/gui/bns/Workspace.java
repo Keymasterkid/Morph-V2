@@ -207,6 +207,11 @@ public abstract class Workspace extends Screen //boxes and stuff!
         return windows;
     }
 
+    @Override
+    public List<? extends GuiEventListener> children() {
+        return getEventListeners();
+    }
+
     
     public Window<?> addWindow(Window<?> window)
     {

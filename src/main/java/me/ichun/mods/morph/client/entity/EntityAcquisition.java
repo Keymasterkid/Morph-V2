@@ -41,6 +41,7 @@ public class EntityAcquisition extends Entity
     public LivingEntity livingAcquired;
 
     public boolean isMorphAcquisition;
+    public boolean hasCaptured = false;
 
     public ArrayList<Tendril> tendrils = new ArrayList<>();
 
@@ -127,18 +128,26 @@ public class EntityAcquisition extends Entity
                 }
             }
 
+            tendrils.removeIf(Tendril::isDone);
+            if (tendrils.isEmpty() && acquiredCapture.infos.isEmpty()) {
+                allDone = true;
+            }
+
             if(isMorphAcquisition)
             {
-                if(tendrils.size() < 16 && age % 2 == 0)
+                if((!acquiredCapture.infos.isEmpty() || !hasCaptured) && age % 2 == 0 && tendrils.size() < 64)
                 {
                     tendrils.add(new Tendril(null).headTowards(getTargetPos(), false));
                     allDone = false;//do not remove, we're not done yet
                 }
-                if(anyRetracting && anyNonRetracting)
+                
+                if(hasCaptured && acquiredCapture.infos.isEmpty())
                 {
                     for(Tendril tendril : tendrils)
                     {
-                        tendril.propagateRetractToChild();
+                        if(!tendril.retract) {
+                            tendril.propagateRetractToChild();
+                        }
                     }
                 }
             }
@@ -151,7 +160,7 @@ public class EntityAcquisition extends Entity
                 }
             }
 
-            if(allDone)
+            if(allDone && acquiredCapture.infos.isEmpty())
             {
                 this.discard();
 
@@ -274,7 +283,7 @@ public class EntityAcquisition extends Entity
                 double d1 = pos.y - origin.y;
                 double d2 = pos.z - origin.z;
 
-                float maxChange = isMorphAcquisition ? 30F : 60F;
+                float maxChange = isMorphAcquisition ? 45F : 60F;
 
                 double dist = Mth.sqrt((float)(d0 * d0 + d2 * d2));
                 float newYaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
@@ -335,7 +344,7 @@ public class EntityAcquisition extends Entity
                     {
                         float maxTendrilGrowth = Math.max(0.0625F, distToEnt / Morph.configClient.acquisitionTendrilMaxChild + (float)random.nextGaussian() * 0.125F); //in blocks
                         height += maxTendrilGrowth * 16F;
-                        if(getReachCoord().distanceTo(getTargetPos()) < Math.max(0.3F, maxTendrilGrowth)) //close enough?
+                        if(getReachCoord().distanceTo(getTargetPos()) < Math.max(0.5F, maxTendrilGrowth)) //close enough?
                         {
                             if(!isMorphAcquisition && age <= 10)
                             {
@@ -354,12 +363,12 @@ public class EntityAcquisition extends Entity
                             double dist = Mth.sqrt((float)(d0 * d0 + d2 * d2));
                             child.yaw = (float)(Mth.atan2(d2, d0) * (double)(180F / (float)Math.PI)) - 90.0F;
                             child.pitch = (float)(-(Mth.atan2(d1, dist) * (double)(180F / (float)Math.PI)));
-                            child.lastHeight = child.height = (float)Mth.sqrt((float)(d0 * d0 + d1 * d1 + d2 * d2)) / 16F;
+                            child.lastHeight = child.height = (float)Mth.sqrt((float)(d0 * d0 + d1 * d1 + d2 * d2)) * 16F;
 
                             if(isMorphAcquisition && !acquiredCapture.infos.isEmpty())
                             {
                                 child.capture = new MorphRenderHandler.ModelPartCapture();
-                                int count = (int)Math.ceil(Math.max(acquiredCapture.infos.size() / 15F, 1));
+                                int count = (int)Math.ceil(Math.max(acquiredCapture.infos.size() / 5F, 1));
                                 for(int x = 0; x < count && !acquiredCapture.infos.isEmpty(); x++)
                                 {
                                     int i = random.nextInt(acquiredCapture.infos.size());
@@ -513,7 +522,7 @@ public class EntityAcquisition extends Entity
 
             float width = getWidth(partialTick) / 16F;
             float halfWidth = width / 2F;
-            float len = lastHeight + (height - lastHeight) * partialTick;
+            float len = (lastHeight + (height - lastHeight) * partialTick) / 16F;
             
             if (len > 0) {
                 float alpha = 1F;
@@ -527,8 +536,8 @@ public class EntityAcquisition extends Entity
                 stack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-yaw));
                 stack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(pitch));
                 
-                // Draw a simple box (Black)
-                renderBox(stack, buffer, -halfWidth, -halfWidth, 0, halfWidth, halfWidth, len, 0F, 0F, 0F, alpha, light, overlay);
+                // Draw a simple box (Textured)
+                renderBox(stack, buffer, -halfWidth, -halfWidth, 0, halfWidth, halfWidth, len, 1F, 1F, 1F, alpha, light, overlay);
 
                 stack.popPose();
             }
@@ -538,37 +547,65 @@ public class EntityAcquisition extends Entity
             org.joml.Matrix4f pose = stack.last().pose();
             org.joml.Matrix3f normal = stack.last().normal();
 
-            // Very simplified box - just its edges or faces
-            // Front
-            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, 0, 0, light, overlay, 0, 0, 1);
-            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, 1, 0, light, overlay, 0, 0, 1);
-            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, 1, 1, light, overlay, 0, 0, 1);
-            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, 0, 1, light, overlay, 0, 0, 1);
-            // Back
-            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, 0, 0, light, overlay, 0, 0, -1);
-            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, 0, 1, light, overlay, 0, 0, -1);
-            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, 1, 1, light, overlay, 0, 0, -1);
-            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, 1, 0, light, overlay, 0, 0, -1);
-            // Left
-            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, 0, 0, light, overlay, -1, 0, 0);
-            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, 1, 0, light, overlay, -1, 0, 0);
-            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, 1, 1, light, overlay, -1, 0, 0);
-            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, 0, 1, light, overlay, -1, 0, 0);
-            // Right
-            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, 0, 0, light, overlay, 1, 0, 0);
-            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, 0, 1, light, overlay, 1, 0, 0);
-            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, 1, 1, light, overlay, 1, 0, 0);
-            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, 1, 0, light, overlay, 1, 0, 0);
-            // Top
-            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, 0, 0, light, overlay, 0, 1, 0);
-            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, 1, 0, light, overlay, 0, 1, 0);
-            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, 1, 1, light, overlay, 0, 1, 0);
-            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, 0, 1, light, overlay, 0, 1, 0);
-            // Bottom
-            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, 0, 0, light, overlay, 0, -1, 0);
-            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, 1, 0, light, overlay, 0, -1, 0);
-            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, 1, 1, light, overlay, 0, -1, 0);
-            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, 0, 1, light, overlay, 0, -1, 0);
+            float w = (maxX - minX) * 16F;
+            float h = (maxY - minY) * 16F;
+            float d = (maxZ - minZ) * 16F;
+
+            // standard Texture UV mapping logic (using 0,0 as offset) / 64 for width, 32 for height
+            float texW = 64F;
+            float texH = 32F;
+
+            // X offsets
+            float rightX = 0;
+            float frontX = d;
+            float leftX = d + w;
+            float backX = d + w + d;
+
+            // Y offsets
+            float topY = 0;
+            float sideY = d;
+
+            // top face
+            float u0 = frontX / texW, v0 = topY / texH, u1 = (frontX + w) / texW, v1 = (topY + d) / texH;
+            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, u0, v1, light, overlay, 0, 1, 0);
+            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, u1, v1, light, overlay, 0, 1, 0);
+            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, u1, v0, light, overlay, 0, 1, 0);
+            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, u0, v0, light, overlay, 0, 1, 0);
+
+            // bottom face
+            u0 = leftX / texW; v0 = topY / texH; u1 = (leftX + w) / texW; v1 = (topY + d) / texH;
+            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, u0, v0, light, overlay, 0, -1, 0);
+            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, u1, v0, light, overlay, 0, -1, 0);
+            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, u1, v1, light, overlay, 0, -1, 0);
+            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, u0, v1, light, overlay, 0, -1, 0);
+
+            // right face
+            u0 = rightX / texW; v0 = sideY / texH; u1 = frontX / texW; v1 = (sideY + h) / texH;
+            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, u0, v0, light, overlay, -1, 0, 0);
+            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, u1, v0, light, overlay, -1, 0, 0);
+            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, u1, v1, light, overlay, -1, 0, 0);
+            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, u0, v1, light, overlay, -1, 0, 0);
+
+            // front face
+            u0 = frontX / texW; v0 = sideY / texH; u1 = leftX / texW; v1 = (sideY + h) / texH;
+            addVertex(pose, normal, buffer, minX, maxY, maxZ, r, g, b, a, u0, v0, light, overlay, 0, 0, 1);
+            addVertex(pose, normal, buffer, minX, minY, maxZ, r, g, b, a, u0, v1, light, overlay, 0, 0, 1);
+            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, u1, v1, light, overlay, 0, 0, 1);
+            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, u1, v0, light, overlay, 0, 0, 1);
+
+            // left face
+            u0 = leftX / texW; v0 = sideY / texH; u1 = backX / texW; v1 = (sideY + h) / texH;
+            addVertex(pose, normal, buffer, maxX, maxY, maxZ, r, g, b, a, u0, v0, light, overlay, 1, 0, 0);
+            addVertex(pose, normal, buffer, maxX, minY, maxZ, r, g, b, a, u0, v1, light, overlay, 1, 0, 0);
+            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, u1, v1, light, overlay, 1, 0, 0);
+            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, u1, v0, light, overlay, 1, 0, 0);
+
+            // back face
+            u0 = backX / texW; v0 = sideY / texH; u1 = (backX + w) / texW; v1 = (sideY + h) / texH;
+            addVertex(pose, normal, buffer, maxX, maxY, minZ, r, g, b, a, u0, v0, light, overlay, 0, 0, -1);
+            addVertex(pose, normal, buffer, maxX, minY, minZ, r, g, b, a, u0, v1, light, overlay, 0, 0, -1);
+            addVertex(pose, normal, buffer, minX, minY, minZ, r, g, b, a, u1, v1, light, overlay, 0, 0, -1);
+            addVertex(pose, normal, buffer, minX, maxY, minZ, r, g, b, a, u1, v0, light, overlay, 0, 0, -1);
         }
 
         private void addVertex(org.joml.Matrix4f pose, org.joml.Matrix3f normal, VertexConsumer buffer, float x, float y, float z, float r, float g, float b, float a, float u, float v, int light, int overlay, float nx, float ny, float nz) {

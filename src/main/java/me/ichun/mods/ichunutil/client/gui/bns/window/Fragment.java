@@ -268,7 +268,7 @@ public abstract class Fragment<P extends Fragment>
     }
     
     public java.util.List<? extends GuiEventListener> children() {
-        return java.util.Collections.emptyList();
+        return this.getEventListeners();
     }
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {}

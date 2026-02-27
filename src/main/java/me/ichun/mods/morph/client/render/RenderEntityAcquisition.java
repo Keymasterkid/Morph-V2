@@ -44,16 +44,20 @@ public class RenderEntityAcquisition extends EntityRenderer<EntityAcquisition>
             double d1 = Mth.lerp(partialTicks, acquisition.livingAcquired.yo - acquisition.yo, acquisition.livingAcquired.getY() - acquisition.getY()) + renderOffset.y;
             double d2 = Mth.lerp(partialTicks, acquisition.livingAcquired.zo - acquisition.zo, acquisition.livingAcquired.getZ() - acquisition.getZ()) + renderOffset.z;
 
-            if(acquisition.acquiredCapture.infos.isEmpty() && acquisition.tickCount < 30)
+            if(!acquisition.hasCaptured && acquisition.tickCount < 60)
             {
                 MorphRenderHandler.currentCapture = acquisition.acquiredCapture;
-                MorphRenderHandler.currentCapture.infos.clear();
+                acquisition.acquiredCapture.infos.clear();
 
                 MorphRenderHandler.renderLiving(renderer, acquisition.livingAcquired, new PoseStack(), buffer, this.entityRenderDispatcher.getPackedLightCoords(acquisition.livingAcquired, partialTicks), partialTicks, Morph.configServer.biomassSkinWhilstInvisible);
 
                 MorphRenderHandler.currentCapture = null;
 
-                acquisition.maxRequiredTendrils = acquisition.acquiredCapture.infos.size();
+                if(!acquisition.acquiredCapture.infos.isEmpty())
+                {
+                    acquisition.hasCaptured = true;
+                    acquisition.maxRequiredTendrils = acquisition.acquiredCapture.infos.size();
+                }
             }
 
             float skinAlpha = Mth.clamp((acquisition.tickCount + partialTicks) / 10, 0F, 1F);

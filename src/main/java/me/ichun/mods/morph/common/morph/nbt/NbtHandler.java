@@ -82,6 +82,38 @@ public class NbtHandler
         {
             String className = jsonObject.get("forClass").getAsString();
 
+            // 1.16 backwards compatibility mapping for MCP to Mojmap
+            if (className.startsWith("net.minecraft.entity.")) {
+                className = className.replace("net.minecraft.entity.", "net.minecraft.world.entity.");
+                
+                if (className.startsWith("net.minecraft.world.entity.passive.horse.")) {
+                     className = className.replace("passive.horse.", "animal.horse.");
+                } else if (className.startsWith("net.minecraft.world.entity.passive.fish.")) {
+                     className = className.replace("passive.fish.", "animal.");
+                } else if (className.startsWith("net.minecraft.world.entity.passive.")) {
+                     className = className.replace("passive.", "animal.");
+                } else if (className.startsWith("net.minecraft.world.entity.item.")) {
+                     className = className.replace("item.", "decoration.");
+                } else if (className.equals("net.minecraft.world.entity.merchant.villager.VillagerEntity")) {
+                     className = "net.minecraft.world.entity.npc.Villager";
+                }
+                
+                if (className.endsWith("Entity") && !className.equals("net.minecraft.world.entity.LivingEntity")) {
+                     className = className.substring(0, className.length() - 6);
+                }
+                
+                // Specific edge cases
+                if (className.equals("net.minecraft.world.entity.animal.Tameable")) {
+                     className = "net.minecraft.world.entity.TamableAnimal";
+                } else if (className.equals("net.minecraft.world.entity.monster.Enderman")) {
+                     className = "net.minecraft.world.entity.monster.EnderMan";
+                } else if (className.equals("net.minecraft.world.entity.animal.Mooshroom")) {
+                     className = "net.minecraft.world.entity.animal.MushroomCow";
+                } else if (className.equals("net.minecraft.world.entity.animal.SnowGolem")) {
+                     className = "net.minecraft.world.entity.animal.SnowGolem";
+                }
+            }
+
             Class clz = Class.forName(className);
 
             boolean forInterface = jsonObject.has("isInterface") && jsonObject.get("isInterface").getAsBoolean();

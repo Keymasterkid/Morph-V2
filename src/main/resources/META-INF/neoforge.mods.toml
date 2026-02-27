@@ -5,7 +5,7 @@ issueTrackerURL="https://github.com/iChun/Morph/issues"
 
 [[mods]]
     modId="morph"
-    version="${file.jarVersion}" #mandatory
+    version="11.0.0" #mandatory
     displayName="Morph"
     displayURL="https://ichun.me/mods/morph/"
     authors="iChun"
@@ -15,7 +15,7 @@ issueTrackerURL="https://github.com/iChun/Morph/issues"
 
 [[mods]]
     modId="ichunutil"
-    version="${file.jarVersion}" #mandatory
+    version="11.0.0" #mandatory
     displayName="iChunUtil"
     authors="iChun"
     description='''
