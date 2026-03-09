@@ -9,7 +9,7 @@
       "type": "traitImmunityFire"
     },
     {
-      "classToIntimidate": "net.minecraft.entity.monster.CreeperEntity",
+      "classToIntimidate": "net.minecraft.world.entity.monster.Creeper",
       "distance": 6.0,
       "farRunSpeed": 1.0,
       "nearRunSpeed": 1.2,

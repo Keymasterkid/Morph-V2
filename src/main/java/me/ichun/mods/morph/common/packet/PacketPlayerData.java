@@ -33,11 +33,8 @@ public class PacketPlayerData extends AbstractPacket
     @Override
     public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
-        PlayerMorphData playerMorphData = new PlayerMorphData();
-        playerMorphData.read(nbt);
-
-        context.enqueueWork(() -> {
-            Morph.eventHandlerClient.setPlayerMorphData(playerMorphData);
-        });
+        if (context.flow().isClientbound()) {
+            context.enqueueWork(() -> me.ichun.mods.morph.client.network.ClientPayloadHandler.handlePacketPlayerData(this, context));
+        }
     }
 }

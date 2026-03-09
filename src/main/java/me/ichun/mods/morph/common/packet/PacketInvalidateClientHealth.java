@@ -17,12 +17,7 @@ public class PacketInvalidateClientHealth extends AbstractPacket
     public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         if (context.flow().isClientbound()) {
-            context.enqueueWork(this::handleClient);
+            context.enqueueWork(() -> me.ichun.mods.morph.client.network.ClientPayloadHandler.handlePacketInvalidateClientHealth(this, context));
         }
-    }
-
-    private void handleClient()
-    {
-        // net.minecraft.client.Minecraft.getInstance().player.hasValidHealth = false;
     }
 }

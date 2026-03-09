@@ -42,6 +42,15 @@ public class IntimidateTrait extends Trait<IntimidateTrait>
         }
         else if(classToIntimidate != null)
         {
+            // Backwards compatibility patch for legacy 1.16/MCP class strings loaded from old NBT saves
+            if ("net.minecraft.entity.merchant.villager.AbstractVillagerEntity".equals(classToIntimidate)) classToIntimidate = "net.minecraft.world.entity.npc.AbstractVillager";
+            else if ("net.minecraft.entity.monster.AbstractSkeletonEntity".equals(classToIntimidate)) classToIntimidate = "net.minecraft.world.entity.monster.AbstractSkeleton";
+            else if ("net.minecraft.entity.passive.FoxEntity".equals(classToIntimidate)) classToIntimidate = "net.minecraft.world.entity.animal.Fox";
+            else if ("net.minecraft.entity.passive.RabbitEntity".equals(classToIntimidate)) classToIntimidate = "net.minecraft.world.entity.animal.Rabbit";
+            else if ("net.minecraft.entity.passive.WolfEntity".equals(classToIntimidate)) classToIntimidate = "net.minecraft.world.entity.animal.Wolf";
+            else if ("net.minecraft.entity.monster.CreeperEntity".equals(classToIntimidate)) classToIntimidate = "net.minecraft.world.entity.monster.Creeper";
+            else if ("net.minecraft.entity.passive.DolphinEntity".equals(classToIntimidate)) classToIntimidate = "net.minecraft.world.entity.animal.Dolphin";
+
             try
             {
                 Class clz = Class.forName(classToIntimidate);

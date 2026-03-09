@@ -33,8 +33,8 @@ public class PacketUpdateMorph extends AbstractPacket //Only used for the full l
     @Override
     public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
-        MorphVariant variant = MorphVariant.createFromNBT(nbt);
-
-        context.enqueueWork(() -> Morph.eventHandlerClient.updateMorph(variant));
+        if (context.flow().isClientbound()) {
+            context.enqueueWork(() -> me.ichun.mods.morph.client.network.ClientPayloadHandler.handlePacketUpdateMorph(this, context));
+        }
     }
 }

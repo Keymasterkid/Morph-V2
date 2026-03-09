@@ -6,7 +6,7 @@
     },
     {
       "type": "traitIntimidate",
-      "classToIntimidate": "net.minecraft.entity.passive.DolphinEntity",
+      "classToIntimidate": "net.minecraft.world.entity.animal.Dolphin",
       "distance": 8.0,
       "farRunSpeed": 1.0,
       "nearRunSpeed": 1.0

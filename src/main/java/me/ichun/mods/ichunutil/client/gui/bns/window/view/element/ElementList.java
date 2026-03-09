@@ -715,7 +715,7 @@ public class ElementList<P extends Fragment> extends ElementFertile<P>
                         }
                         else
                         {
-                            clickTimeout = iChunUtil.configClient.guiDoubleClickSpeed;
+                            clickTimeout = me.ichun.mods.ichunutil.client.core.ClientSetup.configClient.guiDoubleClickSpeed;
                         }
                     }
                 }

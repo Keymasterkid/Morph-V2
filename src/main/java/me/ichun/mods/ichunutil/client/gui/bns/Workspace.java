@@ -387,7 +387,7 @@ public abstract class Workspace extends Screen //boxes and stuff!
                 if(!tooltip.equals(lastTooltip))
                 {
                     lastTooltip = tooltip;
-                    tooltipCooldown = iChunUtil.configClient.guiTooltipCooldown;
+                    tooltipCooldown = me.ichun.mods.ichunutil.client.core.ClientSetup.configClient.guiTooltipCooldown;
                 }
             }
             else

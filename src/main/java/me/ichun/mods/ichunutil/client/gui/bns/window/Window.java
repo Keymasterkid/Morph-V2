@@ -318,7 +318,7 @@ public abstract class Window<M extends IWindows> extends Fragment
             {
                 HashSet<Constraint.Property.Type> disabledDocks = getWorkspace().getDock().disabledDocks;
 
-                int dockSnap = iChunUtil.configClient.guiDockBorder;
+                int dockSnap = me.ichun.mods.ichunutil.client.core.ClientSetup.configClient.guiDockBorder;
                 if(mouseY >= top && mouseY < bottom)
                 {
                     if(mouseX >= left && mouseX < left + dockSnap && !disabledDocks.contains(LEFT))

@@ -29,7 +29,7 @@ public abstract class Trait<T extends Trait> implements Comparable<T>
     //also used to set default values if not set in the JSON
     public void addHooks()
     {
-        if(this instanceof IEventBusRequired)
+        if(this instanceof IEventBusRequired && hasEventMethods())
         {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(this);
         }
@@ -37,10 +37,19 @@ public abstract class Trait<T extends Trait> implements Comparable<T>
 
     public void removeHooks()
     {
-        if(this instanceof IEventBusRequired)
+        if(this instanceof IEventBusRequired && hasEventMethods())
         {
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.unregister(this);
         }
+    }
+
+    private boolean hasEventMethods() {
+        for (java.lang.reflect.Method method : this.getClass().getMethods()) {
+            if (method.isAnnotationPresent(net.neoforged.bus.api.SubscribeEvent.class)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public abstract void tick(float strength); //Strength ranges 0 - 1F

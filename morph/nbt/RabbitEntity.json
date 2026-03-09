@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.RabbitEntity",
+  "forClass": "net.minecraft.world.entity.animal.Rabbit",
   "modifiers": [
     {
       "key": "RabbitType",

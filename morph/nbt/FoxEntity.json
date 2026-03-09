@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.FoxEntity",
+  "forClass": "net.minecraft.world.entity.animal.Fox",
   "modifiers": [
     {
       "key": "Type",

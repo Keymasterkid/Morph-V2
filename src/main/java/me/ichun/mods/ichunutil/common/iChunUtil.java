@@ -1,7 +1,5 @@
 package me.ichun.mods.ichunutil.common;
 
-import me.ichun.mods.ichunutil.client.core.ConfigClient;
-import me.ichun.mods.ichunutil.client.core.EventHandlerClient;
 import me.ichun.mods.ichunutil.common.core.EventHandlerServer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -12,9 +10,6 @@ public class iChunUtil
     public static final String MOD_ID = "ichunutil";
     public static final String MOD_NAME = "iChunUtil";
     public static final Logger LOGGER = LogManager.getLogger();
-    
-    public static ConfigClient configClient;
-    public static EventHandlerClient eventHandlerClient;
     public static EventHandlerServer eventHandlerServer;
 
     public iChunUtil(net.neoforged.bus.api.IEventBus bus, net.neoforged.fml.ModContainer modContainer)
@@ -33,16 +28,7 @@ public class iChunUtil
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(eventHandlerServer = new EventHandlerServer());
 
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
-            configClient = new ConfigClient().init();
-            net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(eventHandlerClient = new EventHandlerClient());
-
-            bus.addListener((net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent event) -> {
-                iChunUtil.LOGGER.info("Registering {} key mappings for iChunUtil", me.ichun.mods.ichunutil.client.key.KeyBind.KEY_MAPPINGS.size());
-                me.ichun.mods.ichunutil.client.key.KeyBind.KEY_MAPPINGS.forEach(event::register);
-            });
-
-            modContainer.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class,
-                    (mc, parent) -> new me.ichun.mods.ichunutil.client.gui.config.WorkspaceConfigs(parent));
+            me.ichun.mods.ichunutil.client.core.ClientSetup.init(bus, modContainer);
         }
     }
 

@@ -35,7 +35,7 @@ public class WindowDock<M extends IWindows> extends Window<M>
         {
             setConstraint(Constraint.matchParent(this, (IConstrainable)parent, 0));
         }
-        borderSize = () -> iChunUtil.configClient.guiDockPadding;
+        borderSize = () -> me.ichun.mods.ichunutil.client.core.ClientSetup.configClient.guiDockPadding;
         titleSize = () -> 0;
     }
 
@@ -259,7 +259,7 @@ public class WindowDock<M extends IWindows> extends Window<M>
             }
         }
 
-        int dockSnap = iChunUtil.configClient.guiDockBorder;
+        int dockSnap = me.ichun.mods.ichunutil.client.core.ClientSetup.configClient.guiDockBorder;
         if(mouseY >= top && mouseY < bottom)
         {
             if(mouseX >= left && mouseX < left + dockSnap && !disabledDocks.contains(LEFT))

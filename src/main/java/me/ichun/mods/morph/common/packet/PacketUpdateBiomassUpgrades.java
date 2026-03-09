@@ -47,10 +47,8 @@ public class PacketUpdateBiomassUpgrades extends AbstractPacket
     @Override
     public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
-        context.enqueueWork(() -> {
-            Morph.eventHandlerClient.morphData.upgrades = upgrades;
-
-            Morph.eventHandlerClient.hudHandler.updateBiomass(Morph.eventHandlerClient.morphData);
-        });
+        if (context.flow().isClientbound()) {
+            context.enqueueWork(() -> me.ichun.mods.morph.client.network.ClientPayloadHandler.handlePacketUpdateBiomassUpgrades(this, context));
+        }
     }
 }

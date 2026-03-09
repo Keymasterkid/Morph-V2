@@ -28,7 +28,7 @@ public class WorkspaceConfigs extends Workspace
 
     public WorkspaceConfigs(Screen lastScreen)
     {
-        super(lastScreen, net.minecraft.network.chat.Component.translatable("gui.ichunutil.configs.title"), iChunUtil.configClient.guiMinecraftStyle);
+        super(lastScreen, net.minecraft.network.chat.Component.translatable("gui.ichunutil.configs.title"), me.ichun.mods.ichunutil.client.core.ClientSetup.configClient.guiMinecraftStyle);
 
         ConfigBase.CONFIGS.forEach((configBase -> {
             TreeSet<ConfigInfo> confs = configs.computeIfAbsent(configBase.getConfigName(), v -> new TreeSet<>(Ordering.natural()));

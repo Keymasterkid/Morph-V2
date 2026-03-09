@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.WolfEntity",
+  "forClass": "net.minecraft.world.entity.animal.Wolf",
   "modifiers": [
     {
       "key": "CollarColor",

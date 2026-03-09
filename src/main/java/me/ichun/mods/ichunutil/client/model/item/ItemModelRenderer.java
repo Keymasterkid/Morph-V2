@@ -96,7 +96,7 @@ abstract class ItemModelPart implements BakedModel
             boolean isLeft = isLeftHand(cameraItemDisplayContext);
             if(isFirstPerson(cameraItemDisplayContext) && ItemEffectHandler.dualHandedAnimationRight > 0)
             {
-                float prog = (float)Math.sin(Mth.clamp((isLeft ? Mth.lerp(iChunUtil.eventHandlerClient.partialTick, ItemEffectHandler.prevDualHandedAnimationLeft, ItemEffectHandler.dualHandedAnimationLeft) : Mth.lerp(iChunUtil.eventHandlerClient.partialTick, ItemEffectHandler.prevDualHandedAnimationRight, ItemEffectHandler.dualHandedAnimationRight)) / (float)ItemEffectHandler.dualHandedAnimationTime, 0F, 1F) * Math.PI / 4F);
+                float prog = (float)Math.sin(Mth.clamp((isLeft ? Mth.lerp(me.ichun.mods.ichunutil.client.core.ClientSetup.eventHandlerClient.partialTick, ItemEffectHandler.prevDualHandedAnimationLeft, ItemEffectHandler.dualHandedAnimationLeft) : Mth.lerp(me.ichun.mods.ichunutil.client.core.ClientSetup.eventHandlerClient.partialTick, ItemEffectHandler.prevDualHandedAnimationRight, ItemEffectHandler.dualHandedAnimationRight)) / (float)ItemEffectHandler.dualHandedAnimationTime, 0F, 1F) * Math.PI / 4F);
                 stack.mulPose(com.mojang.math.Axis.XN.rotationDegrees(30F * prog));
                 stack.translate(0F, -0.1F * prog, 0.3F * prog);
                 stack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(35F * prog));
