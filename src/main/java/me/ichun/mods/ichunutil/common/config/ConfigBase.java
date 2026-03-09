@@ -412,7 +412,6 @@ public abstract class ConfigBase
             }
             if(save)
             {
-                /* config save removed */
                 onConfigLoaded();
             }
         }

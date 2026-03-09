@@ -181,6 +181,7 @@ public abstract class Workspace extends Screen //boxes and stuff!
         // // keyboard events removed
 
         GLFW.glfwSetCursor(this.minecraft.getWindow().getWindow(), 0);
+        this.closeScreen();
     }
 
     

@@ -1,4 +1,4 @@
-Morph
+Morph V2 – NeoForge 1.21.1 port of Morph by iChun
 ====================
 
 Gameplay:
@@ -11,4 +11,4 @@ Gameplay:
 - Hit DELETE/BACKSPACE to delete a Morph.
 
 Config file for more options.
-Requires iChunUtil and Minecraft Forge
+Requires iChunUtil and NeoForge 1.21.1

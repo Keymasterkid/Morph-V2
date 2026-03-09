@@ -1,23 +1,24 @@
 modLoader="javafml"
 loaderVersion="[4,)" #neoforge version dep
 license="GNU Lesser General Public License v3.0"
-issueTrackerURL="https://github.com/iChun/Morph/issues"
+issueTrackerURL="https://github.com/Keymasterkid/Morph-V2/issues"
 
 [[mods]]
     modId="morph"
-    version="11.0.0" #mandatory
-    displayName="Morph"
-    displayURL="https://ichun.me/mods/morph/"
-    authors="iChun"
+    version="0.1.0" #mandatory
+    displayName="Morph V2"
+    displayURL="https://github.com/Keymasterkid/Morph-V2"
+    authors="OG69 Dev™"
+    credits="Original Morph mod by iChun"
     description='''
     Kill other entities and take their form.
     '''
 
 [[mods]]
     modId="ichunutil"
-    version="11.0.0" #mandatory
+    version="0.1.0" #mandatory
     displayName="iChunUtil"
-    authors="iChun"
+    authors="iChun, OG69 Dev™"
     description='''
     A library mod used by iChun's mods.
     '''

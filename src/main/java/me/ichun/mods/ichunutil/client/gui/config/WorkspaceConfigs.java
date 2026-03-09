@@ -162,10 +162,10 @@ public class WorkspaceConfigs extends Workspace
     }
 
     @Override
-    public void closeScreen()
+    public void onClose()
     {
         destroyWindowValues();
-        super.closeScreen();
+        super.onClose();
     }
 
     public static String getLocalizedCategory(WorkspaceConfigs.ConfigInfo info, String cat, String suffix)
