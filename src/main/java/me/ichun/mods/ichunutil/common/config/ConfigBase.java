@@ -209,7 +209,11 @@ public abstract class ConfigBase
         }
         else
         {
-            props = ConfigBase.class.getDeclaredFields()[0].getAnnotation(Prop.class);
+            try {
+                props = ConfigBase.class.getDeclaredField("CONFIGS").getAnnotation(Prop.class);
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException("CRITICAL: Failed to load default @Prop annotation from CONFIGS", e);
+            }
         }
 
 //        if(props.hidden() && !reveal.contains(fieldName)) //this is a hidden property that hasn't been revealed. Do not create it.

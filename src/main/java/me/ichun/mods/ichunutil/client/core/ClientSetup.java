@@ -10,6 +10,7 @@ public class ClientSetup {
     public static EventHandlerClient eventHandlerClient;
 
     public static void init(IEventBus bus, ModContainer modContainer) {
+        ResourceHelper.init();
         configClient = new ConfigClient().init();
         NeoForge.EVENT_BUS.register(eventHandlerClient = new EventHandlerClient());
 

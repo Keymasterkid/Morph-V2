@@ -3,6 +3,7 @@ package me.ichun.mods.ichunutil.client.gui.bns.window.view.element;
 import net.minecraft.client.gui.GuiGraphics;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.ichunutil.client.gui.bns.Workspace;
+import me.ichun.mods.ichunutil.client.gui.bns.Theme;
 import me.ichun.mods.ichunutil.client.gui.bns.window.Fragment;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.client.Minecraft;
@@ -84,7 +85,7 @@ public class ElementTextField extends Element
     private String defaultText = "";
     private int maxStringLength = 32767;
     private Predicate<String> validator = s -> true;
-    private BiFunction<String, Integer, FormattedCharSequence> textFormatter = (s, cursorPos) -> net.minecraft.util.FormattedCharSequence.EMPTY;
+    private BiFunction<String, Integer, FormattedCharSequence> textFormatter = (s, cursorPos) -> net.minecraft.util.FormattedCharSequence.forward(s, net.minecraft.network.chat.Style.EMPTY);
     private @Nullable Consumer<String> responder;
     private @Nullable Consumer<String> enterResponder;
 
@@ -152,6 +153,7 @@ public class ElementTextField extends Element
         widget.setFilter(validator);
         widget.setResponder(responder);
         widget.setFormatter(textFormatter);
+        widget.setVisible(true);
 //        children.add(widget);
         adjustAbstractWidget();
 
@@ -190,6 +192,9 @@ public class ElementTextField extends Element
 
     public void drawTextBox(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
+        boolean actuallyFocused = (parentFragment.getFocused() == this);
+        widget.setFocused(actuallyFocused);
+
         if(renderMinecraftStyle() > 0)
         {
             widget.setBordered(true);
@@ -209,6 +214,9 @@ public class ElementTextField extends Element
             fill(guiGraphics, getTheme().elementInputBorder, 0);
             fill(guiGraphics, colour, 1);
             widget.setBordered(false);
+            // Use theme text color so text doesn't go white when focused
+            widget.setTextColor(Theme.getAsHex(getTheme().font));
+            widget.setTextColorUneditable(Theme.getAsHex(getTheme().font));
             widget.render(guiGraphics, mouseX, mouseY, partialTick);
         }
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
@@ -258,7 +266,7 @@ public class ElementTextField extends Element
     {
         if(isMouseOver(mouseX, mouseY))
         {
-            setFocused(widget);
+            parentFragment.setFocused(this); // set focus to THIS (a Fragment) so unfocus() propagates correctly
             widget.setFocused(true);
             if(button == GLFW.GLFW_MOUSE_BUTTON_RIGHT)
             {
@@ -287,7 +295,7 @@ public class ElementTextField extends Element
     {
         if(parentFragment.getFocused() != this)
         {
-            setFocused(widget);
+            parentFragment.setFocused(this);
             widget.setFocused(true);
             return true;
         }

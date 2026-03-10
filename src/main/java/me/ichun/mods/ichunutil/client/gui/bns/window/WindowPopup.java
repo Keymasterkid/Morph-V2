@@ -48,7 +48,11 @@ public class WindowPopup extends Window<Workspace>
 
             ElementButton<?> button = new ElementButton<>(this, I18n.get("gui.ok"), elementClickable ->
             {
-                parent.parent.removeWindow(parent);
+                if(parent.parent instanceof Workspace) {
+                    ((Workspace)parent.parent).removeWindow(parent);
+                } else {
+                    parent.parent.removeWindow(parent);
+                }
 
                 if(callback != null)
                 {

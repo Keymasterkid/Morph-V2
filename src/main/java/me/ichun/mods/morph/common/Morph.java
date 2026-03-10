@@ -148,6 +148,9 @@ public class Morph
             bus.addListener(this::onRegisterRenderers);
             net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(eventHandlerClient = new EventHandlerClient());
             KeyBinds.init();
+            
+            modContainer.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class,
+                (mc, parent) -> new me.ichun.mods.ichunutil.client.gui.config.WorkspaceConfigs(parent));
         }
     }
 

@@ -11,4 +11,4 @@ Gameplay:
 - Hit DELETE/BACKSPACE to delete a Morph.
 
 Config file for more options.
-Requires iChunUtil and NeoForge 1.21.1
+Includes iChunUtil and Requires NeoForge 1.21.1

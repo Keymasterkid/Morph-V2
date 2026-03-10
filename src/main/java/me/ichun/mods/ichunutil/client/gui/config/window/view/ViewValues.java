@@ -102,7 +102,11 @@ public class ViewValues extends View<WindowValues>
         }
         else
         {
-            props = ConfigBase.class.getDeclaredFields()[0].getAnnotation(Prop.class);
+            try {
+                props = ConfigBase.class.getDeclaredField("CONFIGS").getAnnotation(Prop.class);
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException("CRITICAL: Failed to load default @Prop annotation from CONFIGS", e);
+            }
         }
 
         Object o;

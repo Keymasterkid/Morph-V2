@@ -17,7 +17,12 @@ public class ElementButton<T extends ElementButton> extends ElementClickable<T>
     public ElementButton(@Nonnull Fragment parent, String s, Consumer<T> callback)
     {
         super(parent, callback);
-        text = I18n.get(s);
+        String translated = I18n.get(s);
+        if (translated == null || translated.isEmpty() || translated.equals(s)) {
+            if (s.equals("selectWorld.edit")) translated = "Edit";
+            else translated = s;
+        }
+        text = translated;
     }
 
     public ElementButton<T> disableBackground()

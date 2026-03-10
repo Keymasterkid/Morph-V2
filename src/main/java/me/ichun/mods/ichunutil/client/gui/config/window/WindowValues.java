@@ -10,7 +10,13 @@ public class WindowValues extends Window<WorkspaceConfigs>
 
     private net.minecraft.client.gui.components.events.GuiEventListener focused;
     private boolean isDragging;
-    public void setFocused(net.minecraft.client.gui.components.events.GuiEventListener l) { this.focused = l; }
+    public void setFocused(net.minecraft.client.gui.components.events.GuiEventListener l) {
+        net.minecraft.client.gui.components.events.GuiEventListener lastFocused = this.focused;
+        if (lastFocused instanceof me.ichun.mods.ichunutil.client.gui.bns.window.Fragment && lastFocused != l) {
+            ((me.ichun.mods.ichunutil.client.gui.bns.window.Fragment<?>)lastFocused).unfocus(l);
+        }
+        this.focused = l;
+    }
     public net.minecraft.client.gui.components.events.GuiEventListener getFocused() { return focused; }
     public boolean isDragging() { return isDragging; }
     public void setDragging(boolean isDragging) { this.isDragging = isDragging; }
