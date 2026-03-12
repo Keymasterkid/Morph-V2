@@ -11,6 +11,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.animal.IronGolem;
+import me.ichun.mods.morph.mixin.IronGolemAccessor;
+import me.ichun.mods.morph.mixin.WalkAnimationStateAccessor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -61,10 +64,18 @@ public class MorphState implements Comparable<MorphState>
         syncInventory(livingInstance, player, true);
         
         syncEntityWithPlayer(livingInstance, player);
+        
+        // Sync walk animation state before tick to ensure speedOld is correct
+        WalkAnimationStateAccessor mobWalk = (WalkAnimationStateAccessor)livingInstance.walkAnimation;
+        WalkAnimationStateAccessor playerWalk = (WalkAnimationStateAccessor)player.walkAnimation;
+        mobWalk.setSpeedOld(playerWalk.getSpeedOld());
+        mobWalk.setSpeed(playerWalk.getSpeed());
+        mobWalk.setPosition(playerWalk.getPosition());
+
         livingInstance.tick();
 
-        livingInstance.walkAnimation.setSpeed(player.walkAnimation.speed());
-        livingInstance.walkAnimation.position(player.walkAnimation.position());
+        // Fix double-incrementing: ensure the position matches the player exactly after the tick.
+        mobWalk.setPosition(playerWalk.getPosition());
 
         if(!resetInventory)
         {
@@ -216,6 +227,14 @@ public class MorphState implements Comparable<MorphState>
         living.setRemainingFireTicks(player.getRemainingFireTicks());
 
         living.getActiveEffectsMap().putAll(player.getActiveEffectsMap());
+
+        if (living instanceof IronGolem golem) {
+            if (player.swingTime > 0 && player.swingTime < 10) {
+                ((IronGolemAccessor)golem).setAttackAnimationTick(10 - player.swingTime);
+            } else if (player.swingTime == 0) {
+                ((IronGolemAccessor)golem).setAttackAnimationTick(0);
+            }
+        }
 
         specialEntityPlayerSync(living, player);
     }

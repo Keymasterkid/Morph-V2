@@ -10,10 +10,12 @@
     "EntityMixin",
     "LivingEntityInvokerMixin",
     "LivingEntityMixin",
+    "IronGolemAccessor",
     "LlamaEntityInvokerMixin",
     "ModelPartAccessor",
     "PlayerEntityMixin",
-    "PoseAccessor"
+    "PoseAccessor",
+    "WalkAnimationStateAccessor"
   ],
   "client": [
     "ForgeIngameGuiMixin",
