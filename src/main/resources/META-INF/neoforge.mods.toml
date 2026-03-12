@@ -1,11 +1,11 @@
 modLoader="javafml"
-loaderVersion="[4,)" #neoforge version dep
-license="GNU Lesser General Public License v3.0"
+loaderVersion="${loader_version_range}" #mandatory
+license="${mod_license}"
 issueTrackerURL="https://github.com/Keymasterkid/Morph-V2/issues"
 
 [[mods]]
     modId="morph"
-    version="0.1.0" #mandatory
+    version="${mod_version}" #mandatory
     displayName="Morph V2"
     displayURL="https://github.com/Keymasterkid/Morph-V2"
     authors="OG69 Dev™"
