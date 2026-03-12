@@ -89,7 +89,7 @@ public class MobEffectResistanceTrait extends Trait<MobEffectResistanceTrait>
     @SubscribeEvent
     public void onPotionApplicable(MobEffectEvent.Applicable event)
     {
-        if(lastStrength == 1F && event.getEntity() == player && (MobEffectId != null && MobEffectId.equals("*") || event.getEffectInstance().getEffect() == MobEffectObj))
+        if(lastStrength == 1F && event.getEntity() == player && (MobEffectId != null && MobEffectId.equals("*") || event.getEffectInstance().getEffect().value() == MobEffectObj))
         {
             event.setResult(net.neoforged.neoforge.event.entity.living.MobEffectEvent.Applicable.Result.DO_NOT_APPLY);
         }

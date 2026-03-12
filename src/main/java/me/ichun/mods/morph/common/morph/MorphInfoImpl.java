@@ -20,6 +20,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -34,6 +36,8 @@ import java.util.*;
 
 public class MorphInfoImpl extends MorphInfo
 {
+    public static final ResourceLocation MORPH_ATTRIBUTE_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath(Morph.MOD_ID, "morph_attribute_modifier");
+
     private final Random rand = new Random();
 
     @OnlyIn(Dist.CLIENT)
@@ -162,14 +166,177 @@ public class MorphInfoImpl extends MorphInfo
             return;
         }
 
-        // Stubbed complex attribute logic for 1.21.1
+        HashMap<net.minecraft.world.entity.ai.attributes.Attribute, Double> attributeModifierAmount = new HashMap<>();
+
+
+        //Add the next state's attribute modifier amounts
+        for(String key : nextState.variant.nbtMorph.getAllKeys())
+        {
+            if(key.startsWith("attr_")) //it's an attribute key
+            {
+                ResourceLocation id = ResourceLocation.parse(key.substring(5));
+
+                if(id.toString().equals("minecraft:generic.max_health") && !Morph.configServer.healthScale)
+                {
+                    continue;
+                }
+
+                BuiltInRegistries.ATTRIBUTE.getHolder(id).ifPresent(holder -> {
+                    AttributeInstance playerAttribute = player.getAttribute(holder);
+                    if(playerAttribute != null)
+                    {
+                        double baseValue = playerAttribute.getBaseValue();
+                        double modifierValue = nextState.variant.nbtMorph.getDouble(key) - baseValue;
+
+                        // If we're transitioning and this is max health, don't apply nextState's modifier yet
+                        if (transitionProgress < 1.0F && holder.value() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
+                            modifierValue = 0;
+                        }
+
+                        attributeModifierAmount.put(holder.value(), modifierValue);
+                    }
+                });
+            }
+        }
+
+        if(transitionProgress < 1.0F && prevState != null) //we still have a prev state, aka still morphing
+        {
+            HashSet<net.minecraft.world.entity.ai.attributes.Attribute> prevStateAttrs = new HashSet<>();
+            for(String key : prevState.variant.nbtMorph.getAllKeys())
+            {
+                if(key.startsWith("attr_")) //it's an attribute key
+                {
+                    ResourceLocation id = ResourceLocation.parse(key.substring(5));
+
+                    if(id.toString().equals("minecraft:generic.max_health") && !Morph.configServer.healthScale)
+                    {
+                        continue;
+                    }
+
+                    BuiltInRegistries.ATTRIBUTE.getHolder(id).ifPresent(holder -> {
+                        AttributeInstance playerAttribute = player.getAttribute(holder);
+                        if(playerAttribute != null)
+                        {
+                            double baseValue = playerAttribute.getBaseValue();
+                            double modifierValue = prevState.variant.nbtMorph.getDouble(key) - baseValue;
+
+                            if(attributeModifierAmount.containsKey(holder.value())) //the nextState also has this attribute
+                            {
+                                double val;
+                                if (holder.value() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
+                                    val = modifierValue; // Stay at prevState's health during transition
+                                } else {
+                                    val = modifierValue + (attributeModifierAmount.get(holder.value()) - modifierValue) * transitionProgress;
+                                }
+                                attributeModifierAmount.put(holder.value(), val);
+                            }
+                            else
+                            {
+                                double val;
+                                if (holder.value() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
+                                    val = modifierValue; // Stay at prevState's health during transition
+                                } else {
+                                    val = modifierValue * (1F - transitionProgress);
+                                }
+                                attributeModifierAmount.put(holder.value(), val);
+                            }
+                            prevStateAttrs.add(holder.value());
+                        }
+                    });
+                }
+            }
+
+            for(Map.Entry<net.minecraft.world.entity.ai.attributes.Attribute, Double> e : attributeModifierAmount.entrySet())
+            {
+                if(!prevStateAttrs.contains(e.getKey())) //this is added by nextState, we need to decrease the modifier since we're still transitioning
+                {
+                    // Skip max health here, we handled it above
+                    if (e.getKey() != net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
+                        e.setValue(e.getValue() * transitionProgress);
+                    }
+                }
+            }
+        }
+
+        //add these modifiers to the player
+        for(Map.Entry<net.minecraft.world.entity.ai.attributes.Attribute, Double> e : attributeModifierAmount.entrySet())
+        {
+            net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(e.getKey());
+            AttributeInstance playerAttribute = player.getAttribute(holder);
+            if(playerAttribute != null)
+            {
+                rand.setSeed(Math.abs("MorphAttr".hashCode() * 1231543L + BuiltInRegistries.ATTRIBUTE.getKey(e.getKey()).toString().hashCode() * 268L));
+                ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath("morph", "attr_" + BuiltInRegistries.ATTRIBUTE.getKey(e.getKey()).getPath());
+
+                double lastRatio = 0D;
+                boolean isMaxHealth = e.getKey() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value();
+
+                if(isMaxHealth) //special casing for the max health
+                {
+                    lastRatio = player.getHealth() / player.getMaxHealth();
+                }
+
+                //you can't reapply the same modifier, so lets remove it first
+                playerAttribute.removeModifier(modifierId);
+
+                if(e.getValue() != 0) //if the modifier is non-zero, add it
+                {
+                    playerAttribute.addTransientModifier(new AttributeModifier(modifierId, e.getValue(), AttributeModifier.Operation.ADD_VALUE));
+
+                    if(isMaxHealth && lastRatio > 0D) //we're doing the max health
+                    {
+                        double currentRatio = player.getHealth() / player.getMaxHealth();
+
+                        if(currentRatio != lastRatio) //if ratio is different, change the health
+                        {
+                            double targetHealth = lastRatio * player.getMaxHealth();
+                            double extraHealth = targetHealth - player.getHealth();
+
+                            // Morph.channel.sendTo(new PacketInvalidateClientHealth(), (net.minecraft.server.level.ServerPlayer) player);
+                            player.setHealth(player.getHealth() + (float) extraHealth);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     public void removeAttributeModifiersFromPrevState()
     {
-        if(prevState != null)
+        if(prevState != null) //just in case?
         {
-            // Stubbed removal logic for 1.21.1
+            HashSet<net.minecraft.world.entity.ai.attributes.Attribute> attributesToRemove = new HashSet<>();
+
+            //Add the prev state's attributes
+            for(String key : prevState.variant.nbtMorph.getAllKeys())
+            {
+                if(key.startsWith("attr_")) //it's an attribute key
+                {
+                    ResourceLocation id = ResourceLocation.parse(key.substring(5));
+                    BuiltInRegistries.ATTRIBUTE.getHolder(id).ifPresent(holder -> attributesToRemove.add(holder.value()));
+                }
+            }
+
+            //Remove attributes that nextState also has (we keep those active, they stay morphed)
+            for(String key : nextState.variant.nbtMorph.getAllKeys())
+            {
+                if(key.startsWith("attr_")) //it's an attribute key
+                {
+                    ResourceLocation id = ResourceLocation.parse(key.substring(5));
+                    BuiltInRegistries.ATTRIBUTE.getHolder(id).ifPresent(holder -> attributesToRemove.remove(holder.value()));
+                }
+            }
+
+            for(net.minecraft.world.entity.ai.attributes.Attribute attribute : attributesToRemove)
+            {
+                net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute);
+                AttributeInstance playerAttribute = player.getAttribute(holder);
+                if(playerAttribute != null)
+                {
+                    ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath("morph", "attr_" + BuiltInRegistries.ATTRIBUTE.getKey(attribute).getPath());
+                    playerAttribute.removeModifier(modifierId);
+                }
+            }
         }
     }
 

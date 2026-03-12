@@ -94,7 +94,7 @@ public class IntimidateTrait extends Trait<IntimidateTrait>
 
         if(!player.level().isClientSide && strength == 1F && (idIntimidate != null || classIntimidate != null))
         {
-            List<? extends Mob> entitiesIntimidated = idIntimidate != null ? player.level().getEntities(idIntimidate, player.getBoundingBox().inflate(distance, 3D, distance), p -> p instanceof PathfinderMob).stream().map(e -> (Mob)e).toList() : player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(distance, 3D, distance), p -> p instanceof PathfinderMob);
+            List<? extends Mob> entitiesIntimidated = idIntimidate != null ? player.level().getEntities(idIntimidate, player.getBoundingBox().inflate(distance, 3D, distance), p -> p instanceof PathfinderMob).stream().map(e -> (Mob)e).toList() : player.level().getEntitiesOfClass(Mob.class, player.getBoundingBox().inflate(distance, 3D, distance), p -> classIntimidate.isInstance(p) && p instanceof PathfinderMob);
             for(Object o : entitiesIntimidated)
             {
                 PathfinderMob creature = (PathfinderMob)o;
@@ -141,9 +141,9 @@ public class IntimidateTrait extends Trait<IntimidateTrait>
     public void onLivingSetTarget(LivingChangeTargetEvent event)
     {
         //if the target is the player and it's not the revenge target/entity attacking it, cancel
-        if(lastStrength == 1F && event.getNewAboutToBeSetTarget() == player && (idIntimidate != null && idIntimidate.equals(event.getEntity().getType()) || classIntimidate != null && classIntimidate.isInstance(event.getEntity())) && !(event.getEntity().getLastHurtByMob() == player || ((Mob)event.getEntity()).getTarget() == player))
+        if(lastStrength == 1F && event.getNewAboutToBeSetTarget() == player && (idIntimidate != null && idIntimidate.equals(event.getEntity().getType()) || classIntimidate != null && classIntimidate.isInstance(event.getEntity())) && !(event.getEntity().getLastHurtByMob() == player || (event.getEntity() instanceof Mob && ((Mob)event.getEntity()).getTarget() == player)))
         {
-            ((Mob)event.getEntity()).setTarget(null);
+            event.setNewAboutToBeSetTarget(null);
         }
     }
 }

@@ -32,7 +32,7 @@ public class HostileTrait extends Trait<HostileTrait>
         //if the target is the player and it's not the revenge target/entity attacking it, cancel
         if(lastStrength == 1F && event.getNewAboutToBeSetTarget() == player && event.getEntity() instanceof Mob && !(event.getEntity().getLastHurtByMob() == player || ((Mob)event.getEntity()).getTarget() == player))
         {
-            ((Mob)event.getEntity()).setTarget(null);
+            event.setNewAboutToBeSetTarget(null);
         }
     }
 }

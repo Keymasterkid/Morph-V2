@@ -71,7 +71,8 @@ public class MorphVariant implements Comparable<MorphVariant>
 
     public void writeSupportedAttributes(LivingEntity living)
     {
-        for(Map.Entry<ResourceLocation, AttributeConfig> e : MorphApi.getApiImpl().getSupportedAttributes().entrySet())
+        Map<ResourceLocation, AttributeConfig> attrs = MorphApi.getApiImpl().getSupportedAttributes();
+        for(Map.Entry<ResourceLocation, AttributeConfig> e : attrs.entrySet())
         {
             net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.getHolder(e.getKey()).ifPresent(holder -> {
                 if(living.getAttributes().hasAttribute(holder))

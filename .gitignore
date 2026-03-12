@@ -5,6 +5,7 @@ bin
 .metadata
 .classpath
 .project
+qodana.yaml
 
 # IchunUtil 1.16 open source
 iChunUtil-1.16

@@ -414,7 +414,12 @@ public final class MorphHandler implements IApi
     @Override
     public Map<ResourceLocation, AttributeConfig> getSupportedAttributes()
     {
-        return Morph.configServer.supportedAttributesMap;
+        if(Morph.configServer != null && Morph.configServer.supportedAttributesMap.isEmpty())
+        {
+            Morph.LOGGER.warn("[MorphAttr] supportedAttributesMap is empty! Forcing a parse.");
+            Morph.configServer.onConfigLoaded();
+        }
+        return Morph.configServer != null ? Morph.configServer.supportedAttributesMap : Collections.emptyMap();
     }
 
     @Nullable

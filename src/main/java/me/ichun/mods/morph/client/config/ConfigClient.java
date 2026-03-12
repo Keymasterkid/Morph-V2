@@ -40,7 +40,7 @@ public class ConfigClient extends ConfigBase
     @Prop(min = 0, max = 100)
     public int acquisitionTendrilPartOpacity = 5;
 
-    public boolean morphAllowInteractionHandOverride = true;
+    public boolean morphAllowHandOverride = true;
 
     public boolean morphDisableRidingPlayerRenderInFirstPerson = true;
 
@@ -122,7 +122,7 @@ public class ConfigClient extends ConfigBase
     @Override
     public void onConfigLoaded()
     {
-        InteractionHandHandler.setState(morphAllowInteractionHandOverride);
+        InteractionHandHandler.setState(morphAllowHandOverride);
     }
 
     @Nonnull

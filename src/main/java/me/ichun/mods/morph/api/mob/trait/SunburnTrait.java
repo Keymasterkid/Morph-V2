@@ -46,7 +46,7 @@ public class SunburnTrait extends Trait<SunburnTrait>
         {
             MorphInfo morphInfo = MorphApi.getApiImpl().getMorphInfo(player);
             LivingEntity morphEntity = morphInfo.getActiveMorphEntity();
-            return morphEntity != null && morphEntity.isBaby();
+            return morphEntity == null || !morphEntity.isBaby();
         }
         return true;
     }

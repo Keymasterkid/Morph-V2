@@ -41,15 +41,18 @@ import java.util.UUID;
 @OnlyIn(Dist.CLIENT)
 public class MorphRenderHandler
 {
-    private static final VertexConsumer NO_OP_VERTEX_CONSUMER = new VertexConsumer() {
-        @Override public VertexConsumer addVertex(float x, float y, float z) { return this; }
-        @Override public VertexConsumer setColor(int red, int green, int blue, int alpha) { return this; }
-        @Override public VertexConsumer setUv(float u, float v) { return this; }
-        @Override public VertexConsumer setUv1(int u, int v) { return this; }
-        @Override public VertexConsumer setUv2(int u, int v) { return this; }
-        @Override public VertexConsumer setNormal(float x, float y, float z) { return this; }
-        @Override public void addVertex(float x, float y, float z, int color, float u, float v, int overlay, int light, float nx, float ny, float nz) { }
-    };
+    private static VertexConsumer createNoOpVertexConsumer()
+    {
+        return new VertexConsumer() {
+            @Override public VertexConsumer addVertex(float x, float y, float z) { return this; }
+            @Override public VertexConsumer setColor(int red, int green, int blue, int alpha) { return this; }
+            @Override public VertexConsumer setUv(float u, float v) { return this; }
+            @Override public VertexConsumer setUv1(int u, int v) { return this; }
+            @Override public VertexConsumer setUv2(int u, int v) { return this; }
+            @Override public VertexConsumer setNormal(float x, float y, float z) { return this; }
+            @Override public void addVertex(float x, float y, float z, int color, float u, float v, int overlay, int light, float nx, float ny, float nz) { }
+        };
+    }
 
     private static float playerShadowSize = -1F;
     private static boolean changedShadowSize = false;
@@ -241,7 +244,7 @@ public class MorphRenderHandler
 
                 LivingEntity livingInstance = info.prevState.getEntityInstance(player.level(), player);
 
-                renderLiving(info.prevState, livingInstance, new PoseStack(), (rt) -> NO_OP_VERTEX_CONSUMER, light, partialTick, Morph.configServer.biomassSkinWhilstInvisible);
+                renderLiving(info.prevState, livingInstance, new PoseStack(), (rt) -> createNoOpVertexConsumer(), light, partialTick, Morph.configServer.biomassSkinWhilstInvisible);
 
                 currentCapture = null; //reset before we do anything else
 
@@ -261,7 +264,7 @@ public class MorphRenderHandler
 
                 LivingEntity livingInstance = info.nextState.getEntityInstance(player.level(), player);
 
-                renderLiving(info.nextState, livingInstance, new PoseStack(), (rt) -> NO_OP_VERTEX_CONSUMER, light, partialTick, Morph.configServer.biomassSkinWhilstInvisible);
+                renderLiving(info.nextState, livingInstance, new PoseStack(), (rt) -> createNoOpVertexConsumer(), light, partialTick, Morph.configServer.biomassSkinWhilstInvisible);
 
                 currentCapture = null; //reset before we do anything else
 
@@ -282,7 +285,7 @@ public class MorphRenderHandler
 
                 LivingEntity prevLivingInstance = info.prevState.getEntityInstance(player.level(), player);
 
-                renderLiving(info.prevState, prevLivingInstance, new PoseStack(), (rt) -> NO_OP_VERTEX_CONSUMER, light, partialTick, Morph.configServer.biomassSkinWhilstInvisible);
+                renderLiving(info.prevState, prevLivingInstance, new PoseStack(), (rt) -> createNoOpVertexConsumer(), light, partialTick, Morph.configServer.biomassSkinWhilstInvisible);
 
                 if(nextModel == null)
                 {
@@ -296,7 +299,7 @@ public class MorphRenderHandler
 
                 LivingEntity nextLivingInstance = info.nextState.getEntityInstance(player.level(), player);
 
-                renderLiving(info.nextState, nextLivingInstance, new PoseStack(), (rt) -> NO_OP_VERTEX_CONSUMER, light, partialTick, Morph.configServer.biomassSkinWhilstInvisible);
+                renderLiving(info.nextState, nextLivingInstance, new PoseStack(), (rt) -> createNoOpVertexConsumer(), light, partialTick, Morph.configServer.biomassSkinWhilstInvisible);
 
                 currentCapture = null; //reset before we do anything else
                 denyRenderNameplate = false;

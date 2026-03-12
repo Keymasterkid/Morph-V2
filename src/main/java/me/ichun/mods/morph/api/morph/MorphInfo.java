@@ -209,6 +209,7 @@ public abstract class MorphInfo
             this.morphTime = 0;
             this.morphingTime = 0;
         }
+        firstTick = true; //reset firstTick so applyAttributeModifiers fires on the first tick after morphing
         setNextState(state);
         playSoundTime = -1; //default
         player.refreshDimensions();
@@ -279,6 +280,7 @@ public abstract class MorphInfo
 
         morphTime = tag.getInt("morphTime");
         morphingTime = tag.getInt("morphingTime");
+        firstTick = true; //ensure attribute modifiers are applied on first tick after load
 
         player.refreshDimensions();
     }

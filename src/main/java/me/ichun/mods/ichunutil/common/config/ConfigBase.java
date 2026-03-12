@@ -358,7 +358,6 @@ public abstract class ConfigBase
 
     private void onConfigLoad(ModConfigEvent.Loading event)
     {
-        iChunUtil.LOGGER.info("ConfigEvent onConfigLoad fired for file: " + event.getConfig().getFileName());
         if(event.getConfig().getFileName().equals(fileName))
         {
             config = event.getConfig();

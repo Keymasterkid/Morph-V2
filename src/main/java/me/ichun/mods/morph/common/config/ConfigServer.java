@@ -26,9 +26,10 @@ public class ConfigServer extends ConfigBase
     public int morphTime = 100; // 5 seconds
 
     public boolean aggressiveSizeRecalculation = false;
+    public boolean healthScale = true;
 
     private List<String> supportedAttributes = Util.make(new ArrayList<>(), list -> {
-        list.add("minecraft:generic.max_health;more;20");
+        list.add("minecraft:generic.max_health;more");
         list.add("minecraft:generic.knockback_resistance;more");
         list.add("minecraft:generic.movement_speed;more;0.1");
         list.add("minecraft:generic.attack_damage;more");
@@ -38,9 +39,9 @@ public class ConfigServer extends ConfigBase
         list.add("minecraft:generic.luck;more");
         list.add("minecraft:horse.jump_strength;more");
 
-        //Taken from ForgeMod
-        list.add("forge:swim_speed;more");
-        list.add("forge:reach_distance;more");
+        //Replaced with neoforge attributes
+        list.add("neoforge:swim_speed;more");
+        list.add("neoforge:reach_distance;more");
     });
 
     public List<String> disabledTraits = new ArrayList<>();

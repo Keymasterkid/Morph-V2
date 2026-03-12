@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.common.util.FakePlayer;
 // AttachCapabilitiesEvent removed in 1.21 - use Data Attachments
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
@@ -87,6 +88,15 @@ public class EventHandlerServer
             {
                 event.setNewSize(info.getMorphSize(1F));
             }
+        }
+    }
+
+    @SubscribeEvent
+    public void onPlayerTick(PlayerTickEvent.Post event)
+    {
+        if(!event.getEntity().isRemoved())
+        {
+            MorphHandler.INSTANCE.getMorphInfo(event.getEntity()).tick();
         }
     }
 

@@ -91,13 +91,18 @@ public class EventHandlerClient
     @SubscribeEvent
     public void onPlayerTick(net.neoforged.neoforge.event.tick.PlayerTickEvent.Post event)
     {
-        if(!event.getEntity().isRemoved() && event.getEntity().level().isClientSide() && event.getEntity() == net.minecraft.client.Minecraft.getInstance().player && event.getEntity().tickCount == 10)
+        if(!event.getEntity().isRemoved() && event.getEntity().level().isClientSide())
         {
-            MorphInfo info = MorphHandler.INSTANCE.getMorphInfo(event.getEntity());
-            if(!info.requested)
+            MorphHandler.INSTANCE.getMorphInfo(event.getEntity()).tick();
+
+            if(event.getEntity() == net.minecraft.client.Minecraft.getInstance().player && event.getEntity().tickCount == 10)
             {
-                Morph.channel.sendToServer(new PacketRequestMorphInfo(event.getEntity().getGameProfile().getId()));
-                info.requested = true;
+                MorphInfo info = MorphHandler.INSTANCE.getMorphInfo(event.getEntity());
+                if(!info.requested)
+                {
+                    Morph.channel.sendToServer(new PacketRequestMorphInfo(event.getEntity().getGameProfile().getId()));
+                    info.requested = true;
+                }
             }
         }
     }
