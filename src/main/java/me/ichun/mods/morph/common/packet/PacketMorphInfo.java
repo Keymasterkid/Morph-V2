@@ -38,19 +38,7 @@ public class PacketMorphInfo extends AbstractPacket
     public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         if (context.flow().isClientbound()) {
-            context.enqueueWork(this::handleClient);
-        }
-    }
-
-    private void handleClient()
-    {
-        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        if (mc.level == null) return;
-        
-        Entity entity = mc.level.getEntity(entId);
-        if(entity instanceof Player && !entity.isRemoved()) // we use capabilities, if the entity is removed, then caps will error
-        {
-            MorphHandler.INSTANCE.getMorphInfo((Player)entity).read(nbt);
+            context.enqueueWork(() -> me.ichun.mods.morph.client.network.ClientPayloadHandler.handlePacketMorphInfo(this, context));
         }
     }
 }

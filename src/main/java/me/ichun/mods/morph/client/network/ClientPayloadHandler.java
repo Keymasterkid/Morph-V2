@@ -7,6 +7,8 @@ import me.ichun.mods.morph.common.packet.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import me.ichun.mods.morph.common.morph.MorphHandler;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 public class ClientPayloadHandler {
@@ -80,5 +82,42 @@ public class ClientPayloadHandler {
         PlayerMorphData playerMorphData = new PlayerMorphData();
         playerMorphData.read(msg.nbt);
         Morph.eventHandlerClient.setPlayerMorphData(playerMorphData);
+    }
+
+    public static void handlePacketOpenGenerator(PacketOpenGenerator msg, IPayloadContext context) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+
+        if(msg.targetId >= 0)
+        {
+            Entity target = mc.level.getEntity(msg.targetId);
+
+            if(target instanceof LivingEntity && !(target instanceof Player))
+            {
+                LivingEntity living = (LivingEntity)target;
+
+                mc.setScreen(new me.ichun.mods.morph.client.gui.nbt.WorkspaceNbt(mc.screen, living));
+            }
+        }
+        else
+        {
+            mc.setScreen(new me.ichun.mods.morph.client.gui.mob.WorkspaceMobData(mc.screen));
+        }
+    }
+
+    public static void handlePacketMorphInfo(PacketMorphInfo msg, IPayloadContext context) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+
+        Entity entity = mc.level.getEntity(msg.entId);
+        if(entity instanceof Player && !entity.isRemoved())
+        {
+            MorphHandler.INSTANCE.getMorphInfo((Player)entity).read(msg.nbt);
+        }
+    }
+
+    public static void registerConfigScreen(net.neoforged.fml.ModContainer modContainer) {
+        modContainer.registerExtensionPoint(net.neoforged.neoforge.client.gui.IConfigScreenFactory.class,
+            (mc, parent) -> new me.ichun.mods.ichunutil.client.gui.config.WorkspaceConfigs(parent));
     }
 }

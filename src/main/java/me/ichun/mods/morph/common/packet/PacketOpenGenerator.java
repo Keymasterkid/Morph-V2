@@ -33,29 +33,7 @@ public class PacketOpenGenerator extends AbstractPacket
     public void process(net.neoforged.neoforge.network.handling.IPayloadContext context)
     {
         if (context.flow().isClientbound()) {
-            handleClient();
-        }
-    }
-
-    private void handleClient()
-    {
-        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
-        if (mc.level == null) return;
-        
-        if(targetId >= 0)
-        {
-            Entity target = mc.level.getEntity(targetId);
-
-            if(target instanceof LivingEntity && !(target instanceof Player))
-            {
-                LivingEntity living = (LivingEntity)target;
-
-                mc.setScreen(new me.ichun.mods.morph.client.gui.nbt.WorkspaceNbt(mc.screen, living));
-            }
-        }
-        else
-        {
-            mc.setScreen(new me.ichun.mods.morph.client.gui.mob.WorkspaceMobData(mc.screen));
+            context.enqueueWork(() -> me.ichun.mods.morph.client.network.ClientPayloadHandler.handlePacketOpenGenerator(this, context));
         }
     }
 }
