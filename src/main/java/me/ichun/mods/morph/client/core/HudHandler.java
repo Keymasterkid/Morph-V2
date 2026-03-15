@@ -735,22 +735,7 @@ public class HudHandler
                         EntityDimensions livingSize = living.getDimensions(net.minecraft.world.entity.Pose.STANDING);
                         float entSize = Math.max(livingSize.width(), livingSize.height()) / 1.95F; //1.95F = zombie height
 
-                        EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
-                        LivingEntityRenderer livingRenderer = (LivingEntityRenderer)dispatcher.getRenderer(living);
-                        // getRenderType is protected. Using a generic one for now.
-                        VertexConsumer buffer = mc.renderBuffers().bufferSource().getBuffer(net.minecraft.client.renderer.RenderType.entityCutoutNoCull(me.ichun.mods.morph.common.morph.MorphHandler.INSTANCE.getMorphSkinTexture()));
-                        int light = 15728880; // full bright
-                        float forceDuringInvisibility = 1.0F; // always render fully opaque
 
-                        // renderLiving(livingRenderer, living, stack, buffer, light, partialTick, forceDuringInvisibility);
-                        if (living instanceof Mob && living.isBaby()) //Checked in EntityRenderDispatcher
-                        {
-                            // state.renderedShadowSize = livingRenderer.shadowRadius * 0.5F;
-                        }
-                        else
-                        {
-                            // state.renderedShadowSize = livingRenderer.shadowRadius;
-                        }
                         if(j == indexHori) //if it is selected, prevent the downscale.
                         {
                             if(showSelector)
