@@ -58,6 +58,12 @@ public class RenderEntityAcquisition extends EntityRenderer<EntityAcquisition>
                     acquisition.hasCaptured = true;
                     acquisition.maxRequiredTendrils = acquisition.acquiredCapture.infos.size();
                 }
+                else
+                {
+                    // Fallback for modded entities with custom renderers (e.g. GeckoLib)
+                    acquisition.hasCaptured = true;
+                    acquisition.maxRequiredTendrils = 10;
+                }
             }
 
             float skinAlpha = Mth.clamp((acquisition.tickCount + partialTicks) / 10, 0F, 1F);

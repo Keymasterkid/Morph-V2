@@ -135,9 +135,9 @@ public class EntityAcquisition extends Entity
 
             if(isMorphAcquisition)
             {
-                if((!acquiredCapture.infos.isEmpty() || !hasCaptured) && age % 2 == 0 && tendrils.size() < 64)
+                if((!acquiredCapture.infos.isEmpty() || !hasCaptured) && age % 2 == 0 && tendrils.size() < (hasCaptured ? maxRequiredTendrils : 64))
                 {
-                    tendrils.add(new Tendril(null).headTowards(getTargetPos(), false));
+                    tendrils.add(new Tendril(null).headTowards(getTargetPos(!acquiredCapture.infos.isEmpty()), false));
                     allDone = false;//do not remove, we're not done yet
                 }
                 
@@ -173,9 +173,23 @@ public class EntityAcquisition extends Entity
         }
     }
 
+    public Vec3 getTargetPos(boolean useParts)
+    {
+        if(!useParts)
+        {
+            // Randomly target the volume of the entity for modded entities without standard parts
+            AABB box = livingAcquired.getDimensions(Pose.STANDING).makeBoundingBox(livingAcquired.position());
+            double x = box.minX + (box.maxX - box.minX) * random.nextDouble();
+            double y = box.minY + (box.maxY - box.minY) * random.nextDouble();
+            double z = box.minZ + (box.maxZ - box.minZ) * random.nextDouble();
+            return new Vec3(x, y, z);
+        }
+        return livingAcquired.position().add(0D, livingAcquired.getDimensions(Pose.STANDING).height() / 2D, 0D);
+    }
+
     public Vec3 getTargetPos()
     {
-        return livingAcquired.position().add(0D, livingAcquired.getDimensions(Pose.STANDING).height() / 2D, 0D);
+        return getTargetPos(true);
     }
 
     public AABB getRenderBoundingBox()
@@ -344,7 +358,7 @@ public class EntityAcquisition extends Entity
                     {
                         float maxTendrilGrowth = Math.max(0.0625F, distToEnt / Morph.configClient.acquisitionTendrilMaxChild + (float)random.nextGaussian() * 0.125F); //in blocks
                         height += maxTendrilGrowth * 16F;
-                        if(getReachCoord().distanceTo(getTargetPos()) < Math.max(0.5F, maxTendrilGrowth)) //close enough?
+                        if(getReachCoord().distanceTo(getTargetPos(!acquiredCapture.infos.isEmpty())) < Math.max(0.5F, maxTendrilGrowth)) //close enough?
                         {
                             if(!isMorphAcquisition && age <= 10)
                             {
@@ -354,7 +368,7 @@ public class EntityAcquisition extends Entity
 
                             child = new Tendril(this);
 
-                            Vec3 pos = getTargetPos();
+                            Vec3 pos = getTargetPos(!acquiredCapture.infos.isEmpty());
                             Vec3 origin = getReachCoord();
                             double d0 = pos.x - origin.x;
                             double d1 = pos.y - origin.y;

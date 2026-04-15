@@ -99,14 +99,13 @@ public final class HandHandler
                     {
                         LivingEntity livingInstance = info.prevState.getEntityInstance(mc.player.level(), mc.player);
                         EntityRenderer entRenderer = mc.getEntityRenderDispatcher().getRenderer(livingInstance);
-                        if(entRenderer instanceof LivingEntityRenderer)
+                        if(entRenderer instanceof LivingEntityRenderer livingRenderer)
                         {
                             stack.pushPose();
                             stack.translate(0D, -500D, 0D);
                             MorphRenderHandler.renderLiving(entRenderer, livingInstance, stack, buffer, light, partialTick);
                             stack.popPose();
 
-                            LivingEntityRenderer livingRenderer = (LivingEntityRenderer)entRenderer;
                             EntityModel entityModel = livingRenderer.getModel();
 
                             HandInfo infoHelper = HandHandler.getHandInfo(entityModel.getClass());
@@ -135,11 +134,10 @@ public final class HandHandler
 
                         stack.pushPose();
                         stack.translate(0D, -500D, 0D); //maybe I should just set scale to 0?
-                        if(prevRenderer instanceof LivingEntityRenderer)
+                        if(prevRenderer instanceof LivingEntityRenderer livingRenderer)
                         {
                             MorphRenderHandler.renderLiving(prevRenderer, prevInstance, stack, buffer, light, partialTick);
 
-                            LivingEntityRenderer livingRenderer = (LivingEntityRenderer)prevRenderer;
                             EntityModel entityModel = livingRenderer.getModel();
 
                             HandInfo infoHelper = HandHandler.getHandInfo(entityModel.getClass());
@@ -151,11 +149,10 @@ public final class HandHandler
                                 prevStacks = infoHelper.getPlacementCorrectors(humanoidArm);
                             }
                         }
-                        if(nextRenderer instanceof LivingEntityRenderer)
+                        if(nextRenderer instanceof LivingEntityRenderer livingRenderer)
                         {
                             MorphRenderHandler.renderLiving(nextRenderer, nextInstance, stack, buffer, light, partialTick);
 
-                            LivingEntityRenderer livingRenderer = (LivingEntityRenderer)nextRenderer;
                             EntityModel entityModel = livingRenderer.getModel();
 
                             HandInfo infoHelper = HandHandler.getHandInfo(entityModel.getClass());
@@ -226,14 +223,13 @@ public final class HandHandler
                 {
                     LivingEntity livingInstance = info.isMorphed() ? info.nextState.getEntityInstance(mc.player.level(), mc.player) : mc.player;
                     EntityRenderer entRenderer = mc.getEntityRenderDispatcher().getRenderer(livingInstance);
-                    if(entRenderer instanceof LivingEntityRenderer)
+                    if(entRenderer instanceof LivingEntityRenderer livingRenderer)
                     {
                         stack.pushPose();
                         stack.translate(0D, -500D, 0D);
                         MorphRenderHandler.renderLiving(entRenderer, livingInstance, stack, buffer, light, partialTick);
                         stack.popPose();
 
-                        LivingEntityRenderer livingRenderer = (LivingEntityRenderer)entRenderer;
                         EntityModel entityModel = livingRenderer.getModel();
 
                         HandInfo infoHelper = HandHandler.getHandInfo(entityModel.getClass());
