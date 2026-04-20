@@ -25,7 +25,7 @@ import java.util.ArrayList;
 public class ElementRipple extends Element<ElementBiomassUpgrades>
 {
     // Updated RenderType for 1.21.1
-    public final RenderType RIPPLE = RenderType.entityTranslucentCull(me.ichun.mods.morph.common.morph.MorphHandler.INSTANCE.getMorphSkinTexture());
+    public final RenderType RIPPLE = RenderType.entityTranslucent(me.ichun.mods.morph.common.morph.MorphHandler.INSTANCE.getMorphSkinTexture());
 
     public int age;
 
@@ -53,7 +53,8 @@ public class ElementRipple extends Element<ElementBiomassUpgrades>
             double travDist = dist * Math.log10(prog);
             int slices = 30; // Stubbed for simplicity
 
-            Matrix4f matrix = guiGraphics.pose().last().pose();
+            org.joml.Matrix3x2fStack _m2d = guiGraphics.pose();
+org.joml.Matrix4f matrix = new org.joml.Matrix4f(_m2d.m00(), _m2d.m01(), 0, 0, _m2d.m10(), _m2d.m11(), 0, 0, 0, 0, 1, 0, _m2d.m20(), _m2d.m21(), 0, 1);
             net.minecraft.client.renderer.MultiBufferSource.BufferSource bufferSource = net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource();
             VertexConsumer builder = bufferSource.getBuffer(RIPPLE);
             

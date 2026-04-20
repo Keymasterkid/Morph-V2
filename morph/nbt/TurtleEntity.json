@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.TurtleEntity",
+  "forClass": "net.minecraft.world.entity.animal.Turtle",
   "modifiers": [
     {
       "key": "HasEgg",

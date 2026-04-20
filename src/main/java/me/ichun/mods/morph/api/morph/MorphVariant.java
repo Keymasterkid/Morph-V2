@@ -74,7 +74,8 @@ public class MorphVariant implements Comparable<MorphVariant>
         Map<ResourceLocation, AttributeConfig> attrs = MorphApi.getApiImpl().getSupportedAttributes();
         for(Map.Entry<ResourceLocation, AttributeConfig> e : attrs.entrySet())
         {
-            net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.getHolder(e.getKey()).ifPresent(holder -> {
+            BuiltInRegistries.ATTRIBUTE.getOptional(e.getKey()).ifPresent(attr -> {
+                Holder<Attribute> holder = (Holder<Attribute>) BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attr);
                 if(living.getAttributes().hasAttribute(holder))
                 {
                     AttributeConfig attributeConfig = e.getValue();
@@ -102,9 +103,9 @@ public class MorphVariant implements Comparable<MorphVariant>
 
     public static void writeDefaults(LivingEntity living, CompoundTag tag) //taken from Entity.saveWithoutId
     {
-        CompoundTag defs = new CompoundTag();
-
-        living.saveWithoutId(defs); //because I can't copy out serialiseCaps
+        net.minecraft.world.level.storage.TagValueOutput out = net.minecraft.world.level.storage.TagValueOutput.createWithoutContext(new net.minecraft.util.ProblemReporter.Collector());
+        living.saveWithoutId(out); //because I can't copy out serialiseCaps
+        CompoundTag defs = (CompoundTag)out.buildResult();
 
         for(String s : TAGS_TO_TAKE)
         {
@@ -141,7 +142,7 @@ public class MorphVariant implements Comparable<MorphVariant>
 
         //compare with our commons first to see what doesn't match.
         HashSet<String> uncommons = new HashSet<>();
-        for(String key : nbtCommon.getAllKeys())
+        for(String key : nbtCommon.keySet())
         {
             Tag varNBT = variantTag.get(key);
 
@@ -237,7 +238,7 @@ public class MorphVariant implements Comparable<MorphVariant>
         }
 
         //now we compare
-        for(String key : new ArrayList<>(commons.getAllKeys())) { // Iterate over a copy to allow modification
+        for(String key : new ArrayList<>(commons.keySet())) { // Iterate over a copy to allow modification
             for(Variant variant : variants)
             {
                 if(!variant.nbtVariant.contains(key) || !commons.get(key).equals(variant.nbtVariant.get(key)))
@@ -250,7 +251,7 @@ public class MorphVariant implements Comparable<MorphVariant>
 
         //remove from the variants
         nbtCommon.merge(commons);
-        for(String s : commons.getAllKeys())
+        for(String s : commons.keySet())
         {
             for(Variant variant : variants)
             {
@@ -301,7 +302,7 @@ public class MorphVariant implements Comparable<MorphVariant>
 
         Map<ResourceLocation, AttributeConfig> supportedAttributes = MorphApi.getApiImpl().getSupportedAttributes();
 
-        for(String key : nbtMorph.getAllKeys())
+        for(String key : nbtMorph.keySet())
         {
             Tag e = nbtMorph.get(key);
             if(key.startsWith("attr_")) //it's an attribute key
@@ -310,10 +311,10 @@ public class MorphVariant implements Comparable<MorphVariant>
                 if(supportedAttributes.containsKey(id))
                 {
                     AttributeConfig attributeConfig = supportedAttributes.get(id);
-                    final double value = tag.getDouble(key);
+                    final double value = tag.getDouble(key).orElse(0.0D);
                     if(attributeConfig.moreIsBetter) //more is better
                     {
-                        if(nbtMorph.getDouble(key) < value)
+                        if(nbtMorph.getDouble(key).orElse(0.0D) < value)
                         {
                             nbtMorph.putDouble(key, value);
 
@@ -326,7 +327,7 @@ public class MorphVariant implements Comparable<MorphVariant>
                     }
                     else //less is better
                     {
-                        if(nbtMorph.getDouble(key) > value)
+                        if(nbtMorph.getDouble(key).orElse(0.0D) > value)
                         {
                             nbtMorph.putDouble(key, value);
 
@@ -341,7 +342,7 @@ public class MorphVariant implements Comparable<MorphVariant>
             }
         }
 
-        for(String key : tag.getAllKeys())
+        for(String key : tag.keySet())
         {
             Tag e = tag.get(key);
             if(id.equals(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.PLAYER)))
@@ -377,7 +378,7 @@ public class MorphVariant implements Comparable<MorphVariant>
     public LivingEntity createEntityInstance(Level world, @Nullable Player player)
     {
         LivingEntity entInstance = null;
-        EntityType<?> value = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(id);
+        EntityType<?> value = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(id).map(Holder::value).orElse(null);
         if(value != null)
         {
             try
@@ -407,11 +408,10 @@ public class MorphVariant implements Comparable<MorphVariant>
                 else
                 {
                     CompoundTag tags = getCumulativeTags();
-                    Entity ent = value.create(world);
+                    tags.putString("id", id.toString());
+                    Entity ent = EntityType.loadEntityRecursive(tags, world, net.minecraft.world.entity.EntitySpawnReason.LOAD, (e) -> e);
                     if(ent instanceof LivingEntity)
                     {
-                        ent.load(tags);
-
                         entInstance = (LivingEntity)ent;
 
                         for(BiConsumer<LivingEntity, CompoundTag> consumer : MorphApi.getApiImpl().getVariantNbtTagReaders())
@@ -431,7 +431,7 @@ public class MorphVariant implements Comparable<MorphVariant>
         if(entInstance == null) //we can't find the entity type or errored out somewhere... have a pig.
         {
             MorphApi.getLogger().error("Cannot find entity type {} have a pig instead!", id);
-            entInstance = EntityType.PIG.create(world);
+            entInstance = EntityType.PIG.create(world, net.minecraft.world.entity.EntitySpawnReason.LOAD);
             entInstance.setCustomName(Component.literal("Invalid Morph Pig"));
         }
 
@@ -439,7 +439,7 @@ public class MorphVariant implements Comparable<MorphVariant>
 
         if(player != null)
         {
-            entInstance.getPersistentData().putUUID(NBT_PLAYER_ID, player.getGameProfile().getId());
+            entInstance.getPersistentData().putIntArray(NBT_PLAYER_ID, new int[]{(int)(player.getGameProfile().getId().getMostSignificantBits() >> 32), (int)player.getGameProfile().getId().getMostSignificantBits(), (int)(player.getGameProfile().getId().getLeastSignificantBits() >> 32), (int)player.getGameProfile().getId().getLeastSignificantBits()});
         }
 
         return entInstance;
@@ -537,26 +537,26 @@ public class MorphVariant implements Comparable<MorphVariant>
 
     public void read(CompoundTag tag)
     {
-        id = ResourceLocation.parse(tag.getString("id"));
-        nbtMorph = tag.getCompound("nbtMorph");
+        id = ResourceLocation.parse(tag.getString("id").orElse(""));
+        nbtMorph = tag.getCompound("nbtMorph").orElse(new net.minecraft.nbt.CompoundTag());
         if(!id.equals(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.PLAYER)))
         {
-            nbtCommon = tag.getCompound("nbtCommon");
+            nbtCommon = tag.getCompound("nbtCommon").orElse(new net.minecraft.nbt.CompoundTag());
         }
 
         variants.clear();
-        int count = tag.getInt("variantCount");
+        int count = tag.getInt("variantCount").orElse(0);
         for(int i = 0; i < count; i++)
         {
             Variant variant = new Variant();
-            variant.read(tag.getCompound("variant_" + i));
+            variant.read(tag.getCompound("variant_" + i).orElse(new net.minecraft.nbt.CompoundTag()));
             variants.add(variant);
         }
 
         if(tag.contains("thisVariant"))
         {
             Variant variant = new Variant();
-            variant.read(tag.getCompound("thisVariant"));
+            variant.read(tag.getCompound("thisVariant").orElse(new net.minecraft.nbt.CompoundTag()));
             thisVariant = variant;
         }
     }
@@ -595,8 +595,8 @@ public class MorphVariant implements Comparable<MorphVariant>
             return 1;
         }
 
-        EntityType<?> type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(id);
-        EntityType<?> otherType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(o.id);
+        EntityType<?> type = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(id).map(Holder::value).orElse(null);
+        EntityType<?> otherType = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(o.id).map(Holder::value).orElse(null);
         if(type != null)
         {
             if(otherType != null)
@@ -668,7 +668,7 @@ public class MorphVariant implements Comparable<MorphVariant>
             tag.putString("identifier", identifier);
             if(playerUUID != null)
             {
-                tag.putUUID("playerUUID", playerUUID);
+                tag.putIntArray("playerUUID", new int[]{(int)(playerUUID.getMostSignificantBits() >> 32), (int)playerUUID.getMostSignificantBits(), (int)(playerUUID.getLeastSignificantBits() >> 32), (int)playerUUID.getLeastSignificantBits()});
             }
             else
             {
@@ -680,16 +680,21 @@ public class MorphVariant implements Comparable<MorphVariant>
 
         public void read(CompoundTag tag)
         {
-            identifier = tag.getString("identifier");
+            identifier = tag.getString("identifier").orElse("");
             if(tag.contains("playerUUID"))
             {
-                playerUUID = tag.getUUID("playerUUID");
+                int[] arr = tag.getIntArray("playerUUID").orElse(new int[0]);
+                if(arr.length == 4) {
+                    playerUUID = new UUID((long)arr[0] << 32 | (arr[1] & 0xFFFFFFFFL), (long)arr[2] << 32 | (arr[3] & 0xFFFFFFFFL));
+                } else {
+                    playerUUID = null;
+                }
             }
             else
             {
-                nbtVariant = tag.getCompound("nbtVariant");
+                nbtVariant = tag.getCompound("nbtVariant").orElse(new net.minecraft.nbt.CompoundTag());
             }
-            isFavourite = tag.getBoolean("isFavourite");
+            isFavourite = tag.getBoolean("isFavourite").orElse(false);
         }
 
         @Override

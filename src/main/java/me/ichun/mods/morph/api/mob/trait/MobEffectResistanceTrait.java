@@ -33,7 +33,7 @@ public class MobEffectResistanceTrait extends Trait<MobEffectResistanceTrait>
             else
             {
                 ResourceLocation MobEffectRL = ResourceLocation.parse(MobEffectId);
-                MobEffect theMobEffect = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.get(MobEffectRL);
+                MobEffect theMobEffect = net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.get(MobEffectRL).map(net.minecraft.core.Holder::value).orElse(null);
                 if(theMobEffect != null)
                 {
                     MobEffectObj = theMobEffect;

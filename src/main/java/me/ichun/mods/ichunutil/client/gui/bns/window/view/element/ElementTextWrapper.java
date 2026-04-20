@@ -143,7 +143,14 @@ ElementTextWrapper extends Element //TODO image element
         for (int lineNumber = 0; lineNumber < textWrapped.size(); ++lineNumber)
         {
             String line = textWrapped.get(lineNumber);
-            drawString(guiGraphics, line, (float)textX, (float)textY);
+            if(color != null)
+            {
+                drawString(guiGraphics, line, (float)textX, (float)textY, color);
+            }
+            else
+            {
+                drawString(guiGraphics, line, (float)textX, (float)textY);
+            }
             textY += 12;
         }
     }

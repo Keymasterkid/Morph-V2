@@ -350,8 +350,7 @@ public abstract class Workspace extends Screen //boxes and stuff!
     {
         cursorState = CURSOR_ARROW;
 
-        guiGraphics.pose().pushPose();
-        RenderSystem.enableBlend();
+        guiGraphics.pose().pushMatrix();
         renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
         renderWindows(guiGraphics, mouseX, mouseY, partialTick);
@@ -359,8 +358,7 @@ public abstract class Workspace extends Screen //boxes and stuff!
         renderTooltip(guiGraphics, mouseX, mouseY, partialTick);
 
         resetBackground();
-        RenderSystem.enableBlend();
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().popMatrix();
 
         GLFW.glfwSetCursor(this.minecraft.getWindow().getWindow(), cursorState);
     }
@@ -370,7 +368,7 @@ public abstract class Workspace extends Screen //boxes and stuff!
         for(int i = windows.size() - 1; i >= 0; i--)
         {
             Window<?> window = windows.get(i);
-            guiGraphics.pose().translate(0D, 0D, 10D);
+            guiGraphics.pose().translate((float)(0F), (float)(0F)); // 2D translation
             window.render(guiGraphics, mouseX, mouseY, partialTick);
         }
     }
@@ -405,20 +403,19 @@ public abstract class Workspace extends Screen //boxes and stuff!
     public void renderTooltip(GuiGraphics guiGraphics, @Nonnull String tooltip, int mouseX, int mouseY)
     {
         List<String> textStrings = Splitter.on("\n").splitToList(tooltip);
-        // guiGraphics.renderTooltip stubbed/simplified
-        if(renderMinecraftStyle > 0)
+        List<net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent> textLines = new ArrayList<>();
+        for(String s : textStrings)
         {
-            List<Component> textLines = new ArrayList<>();
-            for(String s : textStrings)
-            {
-                textLines.add(Component.literal(s));
-            }
-            // guiGraphics.renderTooltip(font, textLines, Optional.empty(), mouseX, mouseY);
+            textLines.add(net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent.create(Component.literal(s).getVisualOrderText()));
         }
-        else //Mostly taken from GuiUtils
-        {
-            // Stubbed custom tooltip rendering
-        }
+        guiGraphics.renderTooltip(
+                font, 
+                textLines, 
+                mouseX, 
+                mouseY, 
+                net.minecraft.client.gui.screens.inventory.tooltip.DefaultTooltipPositioner.INSTANCE, 
+                (net.minecraft.resources.ResourceLocation) null
+        );
     }
 
     public @Nullable me.ichun.mods.ichunutil.client.gui.bns.window.Fragment<?> getTopMostFragment(double mouseX, double mouseY)
@@ -427,7 +424,8 @@ public abstract class Workspace extends Screen //boxes and stuff!
         List<Window<?>> children = getEventListeners();
         for(int i = children.size() - 1; i >= 0; i--) //furthest back to front
         {
-            me.ichun.mods.ichunutil.client.gui.bns.window.Fragment<?> o1 = null;
+            Window<?> child = children.get(i);
+            me.ichun.mods.ichunutil.client.gui.bns.window.Fragment<?> o1 = child.getTopMostFragment(mouseX, mouseY);
             if(o1 != null)
             {
                 o = o1;
@@ -456,13 +454,12 @@ public abstract class Workspace extends Screen //boxes and stuff!
     {
         if(renderMinecraftStyle > 0)
         {
-            // super.renderBackground removed
-            // Simple background render
-            guiGraphics.fill(0, 0, width, height, 0x80000000);
+            // Fully opaque background to prevent half-black artifacts when only some windows are docked
+            guiGraphics.fill(0, 0, width, height, 0xC0101010);
         }
         else
         {
-            RenderSystem.clearColor((float)getTheme().workspaceBackground[0] / 255F, (float)getTheme().workspaceBackground[1] / 255F, (float)getTheme().workspaceBackground[2] / 255F, 255F);
+            guiGraphics.fill(0, 0, width, height, 0xFF000000); // clear background
         }
     }
 
@@ -646,9 +643,10 @@ public abstract class Workspace extends Screen //boxes and stuff!
     }
 
 
-    //Convenience method
+    // bindTexture(ResourceLocation) removed in 1.21.8: setShaderTexture(int, ResourceLocation) no longer exists.
+    // Callers should use RenderType-based GuiGraphics.blit() instead.
     public static void bindTexture(ResourceLocation rl)
     {
-        com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, rl);
+        // no-op: use GuiGraphics.blit(RenderType.guiTextured(), rl, ...) at call sites
     }
 }

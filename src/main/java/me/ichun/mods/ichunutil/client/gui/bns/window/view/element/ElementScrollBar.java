@@ -1,6 +1,7 @@
 package me.ichun.mods.ichunutil.client.gui.bns.window.view.element;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import me.ichun.mods.ichunutil.client.gui.bns.window.Fragment;
 import me.ichun.mods.ichunutil.client.render.RenderHelper;
 import net.minecraft.client.gui.screens.Screen;
@@ -138,13 +139,13 @@ public class ElementScrollBar<T extends ElementScrollBar> extends Element
             // draw logic simplified for 1.21.1
             if(orientation == Orientation.VERTICAL)
             {
-                guiGraphics.blit(resourceTabItems(), getLeft(), getTop(), 174, 17, 14, height);
-                guiGraphics.blit(resourceTabs(), getLeft() + 1, getTop() + preSpace + 1, 232, 0, 12, scrollBar);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, resourceTabItems(), getLeft(), getTop(), 174F, 17F, 14, height, 256, 256);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, resourceTabs(), getLeft() + 1, getTop() + preSpace + 1, 232F, 0F, 12, scrollBar, 256, 256);
             }
             else
             {
-                guiGraphics.blit(resourceTabItems(), getLeft(), getTop(), 174, 17, width, 14);
-                guiGraphics.blit(resourceTabs(), getLeft() + preSpace + 1, getTop() + 1, 232, 0, scrollBar, 12);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, resourceTabItems(), getLeft(), getTop(), 174F, 17F, width, 14, 256, 256);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, resourceTabs(), getLeft() + preSpace + 1, getTop() + 1, 232F, 0F, scrollBar, 12, 256, 256);
             }
         }
         else
@@ -275,8 +276,6 @@ public class ElementScrollBar<T extends ElementScrollBar> extends Element
 
     public static void draw(GuiGraphics guiGraphics, double posX, double posY, double width, double height, double zLevel, double u1, double u2, double v1, double v2)
     {
-        // Matrix4f matrix = guiGraphics.pose().last().pose();
-        // com.mojang.blaze3d.vertex.Tesselator tessellator = com.mojang.blaze3d.vertex.Tesselator.getInstance();
-        // stubbed for simpler blit calls
+        // Drawing via legacy vertex buffers not supported in 1.21.8; render via guiGraphics.fill() instead
     }
 }

@@ -2,7 +2,7 @@ package me.ichun.mods.ichunutil.client.gui.bns.window;
 
 import com.google.common.collect.ImmutableList;
 import net.minecraft.client.gui.GuiGraphics;
-import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.ichunutil.client.gui.bns.Theme;
 import me.ichun.mods.ichunutil.client.gui.bns.Workspace;
@@ -227,7 +227,7 @@ public abstract class Window<M extends IWindows> extends Fragment
         //render dock highlight
         renderDockHighlight(guiGraphics, mouseX, mouseY, partialTick);
 
-        setScissor();
+        setScissor(guiGraphics);
 
         //render our background
         renderBackground(guiGraphics);
@@ -242,7 +242,7 @@ public abstract class Window<M extends IWindows> extends Fragment
             currentView.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
-        endScissor();
+        endScissor(guiGraphics);
     }
 
     public void renderDockHighlight(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
@@ -348,11 +348,8 @@ public abstract class Window<M extends IWindows> extends Fragment
             }
             if(draw)
             {
-                RenderSystem.enableBlend();
-                RenderSystem.defaultBlendFunc();
                 // Simple highlight for 1.21.1
                 guiGraphics.fill((int)left, (int)top, (int)right, (int)bottom, 0x808080FF);
-                RenderSystem.disableBlend();
             }
         }
     }
@@ -361,7 +358,6 @@ public abstract class Window<M extends IWindows> extends Fragment
     {
         if(renderMinecraftStyle() > 0)
         {
-            RenderSystem.enableBlend();
             //draw logic simplified for 1.21.1
             guiGraphics.fill(getLeft(), getTop(), getRight(), getBottom(), 0xFFC6C6C6);
             guiGraphics.renderOutline(getLeft(), getTop(), width, height, 0xFF000000);
@@ -573,9 +569,9 @@ public abstract class Window<M extends IWindows> extends Fragment
     }
 
     
-    public void resetScissorToParent()
+    public void resetScissorToParent(GuiGraphics guiGraphics)
     {
-        endScissor();
+        endScissor(guiGraphics);
     }
 
     //Parent is not fragment. We gotta override these.

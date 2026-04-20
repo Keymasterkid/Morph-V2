@@ -57,9 +57,9 @@ public class ElementSharedSpace extends ElementFertile
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        setScissor();
+        setScissor(guiGraphics);
         elements.forEach(e -> e.render(guiGraphics, mouseX, mouseY, partialTick));
-        resetScissorToParent();
+        resetScissorToParent(guiGraphics);
     }
 
     

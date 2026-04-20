@@ -5,7 +5,6 @@ import me.ichun.mods.morph.common.morph.MorphHandler;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.sounds.SoundEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -54,32 +53,6 @@ public abstract class LivingEntityMixin
                 if (!stack.isEmpty()) {
                     // Logic for 1.21.1 might need adjustment depending on how sounds are handled.
                 }
-            }
-        }
-    }
-
-    @Inject(method = "getDrinkingSound", at = @At("HEAD"), cancellable = true)
-    protected void getDrinkingSound(ItemStack stack, CallbackInfoReturnable<SoundEvent> cir)
-    {
-        if(((LivingEntity)(Object)this) instanceof Player)
-        {
-            MorphInfo info = MorphHandler.INSTANCE.getMorphInfo((Player)(Object)this);
-            if(info != null && info.isMorphed())
-            {
-                cir.setReturnValue(info.getDrinkSound(stack));
-            }
-        }
-    }
-
-    @Inject(method = "getEatingSound", at = @At("HEAD"), cancellable = true)
-    protected void getEatingSound(ItemStack stack, CallbackInfoReturnable<SoundEvent> cir)
-    {
-        if(((LivingEntity)(Object)this) instanceof Player)
-        {
-            MorphInfo info = MorphHandler.INSTANCE.getMorphInfo((Player)(Object)this);
-            if(info != null && info.isMorphed())
-            {
-                cir.setReturnValue(info.getEatSound(stack));
             }
         }
     }

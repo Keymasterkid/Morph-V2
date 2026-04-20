@@ -1,5 +1,6 @@
 package me.ichun.mods.morph.client.render;
 
+import net.minecraft.world.phys.Vec3;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.ichun.mods.morph.client.entity.EntityAcquisition;
 import me.ichun.mods.morph.client.model.ModelAcquisition;
@@ -8,6 +9,11 @@ import me.ichun.mods.morph.common.morph.MorphHandler;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.LayerDefinition;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
@@ -15,65 +21,101 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class RenderEntityAcquisition extends EntityRenderer<EntityAcquisition>
+public class RenderEntityAcquisition extends EntityRenderer<EntityAcquisition, RenderEntityAcquisition.AcquisitionRenderState>
 {
     private final ModelAcquisition model;
 
     public RenderEntityAcquisition(EntityRendererProvider.Context context)
     {
         super(context);
-        model = new ModelAcquisition();
-        shadowRadius = 0.0F;
+        MeshDefinition meshdefinition = new MeshDefinition();
+        PartDefinition partdefinition = meshdefinition.getRoot();
+        model = new ModelAcquisition(LayerDefinition.create(meshdefinition, 64, 64).bakeRoot());
     }
 
     @Override
-    public void render(EntityAcquisition acquisition, float entityYaw, float partialTicks, PoseStack stack, MultiBufferSource buffer, int light)
+    public void render(AcquisitionRenderState state, PoseStack stack, MultiBufferSource buffer, int light)
     {
-        if(acquisition.acquiredCapture != null)
+        if(state.acquiredCapture != null)
         {
-            EntityRenderer<? super LivingEntity> renderer = this.entityRenderDispatcher.getRenderer(acquisition.livingAcquired);
-            Vec3 renderOffset = renderer.getRenderOffset(acquisition.livingAcquired, partialTicks);
-
-            //calculate the difference of that entity from ours
-            double d0 = Mth.lerp(partialTicks, acquisition.livingAcquired.xo - acquisition.xo, acquisition.livingAcquired.getX() - acquisition.getX()) + renderOffset.x;
-            double d1 = Mth.lerp(partialTicks, acquisition.livingAcquired.yo - acquisition.yo, acquisition.livingAcquired.getY() - acquisition.getY()) + renderOffset.y;
-            double d2 = Mth.lerp(partialTicks, acquisition.livingAcquired.zo - acquisition.zo, acquisition.livingAcquired.getZ() - acquisition.getZ()) + renderOffset.z;
-
-            if(!acquisition.hasCaptured && acquisition.tickCount < 60)
+            if(!state.hasCaptured && state.age < 60)
             {
-                MorphRenderHandler.currentCapture = acquisition.acquiredCapture;
-                acquisition.acquiredCapture.infos.clear();
+                MorphRenderHandler.currentCapture = state.acquiredCapture;
+                state.acquiredCapture.infos.clear();
 
-                MorphRenderHandler.renderLiving(renderer, acquisition.livingAcquired, new PoseStack(), buffer, this.entityRenderDispatcher.getPackedLightCoords(acquisition.livingAcquired, partialTicks), partialTicks, Morph.configServer.biomassSkinWhilstInvisible);
+                EntityRenderer renderer = this.entityRenderDispatcher.getRenderer(state.livingAcquired);
+                MorphRenderHandler.renderLiving(renderer, state.livingAcquired, new PoseStack(), buffer, state.packedLight, state.partialTicks, Morph.configServer.biomassSkinWhilstInvisible);
 
                 MorphRenderHandler.currentCapture = null;
 
-                if(!acquisition.acquiredCapture.infos.isEmpty())
+                if(!state.acquiredCapture.infos.isEmpty())
                 {
-                    acquisition.hasCaptured = true;
-                    acquisition.maxRequiredTendrils = acquisition.acquiredCapture.infos.size();
-                }
-                else
-                {
+                    state.entity.hasCaptured = true;
+                    state.entity.maxRequiredTendrils = state.acquiredCapture.infos.size();
+                } else {
                     // Fallback for modded entities with custom renderers (e.g. GeckoLib)
-                    acquisition.hasCaptured = true;
-                    acquisition.maxRequiredTendrils = 10;
+                    state.entity.hasCaptured = true;
+                    state.entity.maxRequiredTendrils = 10;
                 }
             }
 
-            float skinAlpha = Mth.clamp((acquisition.tickCount + partialTicks) / 10, 0F, 1F);
+            float skinAlpha = Mth.clamp((state.age + state.partialTicks) / 10, 0F, 1F);
 
             stack.pushPose();
-            stack.translate(d0, d1, d2);
-            acquisition.acquiredCapture.render(stack, buffer, light, OverlayTexture.NO_OVERLAY, skinAlpha);
+            stack.translate(state.renderOffset.x, state.renderOffset.y, state.renderOffset.z);
+            state.acquiredCapture.render(stack, buffer, light, OverlayTexture.NO_OVERLAY, skinAlpha);
             stack.popPose();
         }
-        model.render(acquisition, partialTicks, stack, buffer.getBuffer(RenderType.entityTranslucent(getTextureLocation(acquisition))), light, LivingEntityRenderer.getOverlayCoords(acquisition.livingOrigin, 0F));
+        model.render(state.entity, state.partialTicks, stack, buffer.getBuffer(RenderType.entityTranslucent(getTextureLocation(state))), light, state.overlayCoords);
+    }
+
+    @Override
+    public AcquisitionRenderState createRenderState() {
+        return new AcquisitionRenderState();
+    }
+
+    @Override
+    public void extractRenderState(EntityAcquisition entity, AcquisitionRenderState state, float partialTicks) {
+        super.extractRenderState(entity, state, partialTicks);
+        state.entity = entity;
+        state.acquiredCapture = entity.acquiredCapture;
+        state.livingAcquired = entity.livingAcquired;
+        state.livingOrigin = entity.livingOrigin;
+        state.hasCaptured = entity.hasCaptured;
+        state.age = entity.age;
+        state.partialTicks = partialTicks;
+        if(entity.livingAcquired != null) {
+            state.packedLight = this.entityRenderDispatcher.getPackedLightCoords(entity.livingAcquired, partialTicks);
+        }
+        if(entity.livingOrigin != null) {
+            EntityRenderer renderer = this.entityRenderDispatcher.getRenderer(entity.livingOrigin);
+            if (renderer instanceof LivingEntityRenderer livingRenderer) {
+                LivingEntityRenderState livingState = (LivingEntityRenderState)livingRenderer.createRenderState();
+                livingRenderer.extractRenderState(entity.livingOrigin, livingState, partialTicks);
+                state.overlayCoords = LivingEntityRenderer.getOverlayCoords(livingState, 0F);
+            }
+        }
+
+        if(entity.acquiredCapture != null && entity.livingAcquired != null) {
+            EntityRenderer renderer = this.entityRenderDispatcher.getRenderer(entity.livingAcquired);
+            Vec3 offset = Vec3.ZERO;
+            if(renderer instanceof LivingEntityRenderer livingRenderer) {
+                LivingEntityRenderState tempState = (LivingEntityRenderState)livingRenderer.createRenderState();
+                livingRenderer.extractRenderState(entity.livingAcquired, tempState, partialTicks);
+                offset = livingRenderer.getRenderOffset(tempState);
+            }
+            double d0 = Mth.lerp(partialTicks, entity.livingAcquired.xo - entity.xo, entity.livingAcquired.getX() - entity.getX()) + offset.x;
+            double d1 = Mth.lerp(partialTicks, entity.livingAcquired.yo - entity.yo, entity.livingAcquired.getY() - entity.getY()) + offset.y;
+            double d2 = Mth.lerp(partialTicks, entity.livingAcquired.zo - entity.zo, entity.livingAcquired.getZ() - entity.getZ()) + offset.z;
+            state.renderOffset = new Vec3(d0, d1, d2);
+        } else {
+            state.renderOffset = Vec3.ZERO;
+        }
     }
 
     @Override
@@ -83,16 +125,28 @@ public class RenderEntityAcquisition extends EntityRenderer<EntityAcquisition>
         return super.shouldRender(entity, camera, camX, camY, camZ);
     }
 
-    @Override
-    public ResourceLocation getTextureLocation(EntityAcquisition entity)
+    public ResourceLocation getTextureLocation(AcquisitionRenderState state)
     {
         return MorphHandler.INSTANCE.getMorphSkinTexture();
+    }
+
+    public static class AcquisitionRenderState extends EntityRenderState {
+        public EntityAcquisition entity;
+        public MorphRenderHandler.ModelPartCapture acquiredCapture;
+        public LivingEntity livingAcquired;
+        public LivingEntity livingOrigin;
+        public boolean hasCaptured;
+        public int age;
+        public float partialTicks;
+        public int packedLight;
+        public int overlayCoords;
+        public Vec3 renderOffset;
     }
 
     public static class RenderFactory implements EntityRendererProvider<EntityAcquisition>
     {
         @Override
-        public EntityRenderer<EntityAcquisition> create(EntityRendererProvider.Context context)
+        public EntityRenderer<EntityAcquisition, AcquisitionRenderState> create(EntityRendererProvider.Context context)
         {
             return new RenderEntityAcquisition(context);
         }

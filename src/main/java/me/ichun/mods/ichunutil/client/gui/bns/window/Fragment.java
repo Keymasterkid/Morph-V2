@@ -181,26 +181,26 @@ public abstract class Fragment<P extends Fragment>
         return false;
     }
 
-    public void resetScissorToParent()
+    public void resetScissorToParent(GuiGraphics guiGraphics)
     {
         if(!parentFragment.requireScissor())
         {
-            parentFragment.resetScissorToParent();
+            parentFragment.resetScissorToParent(guiGraphics);
         }
         else
         {
-            parentFragment.setScissor();
+            parentFragment.setScissor(guiGraphics);
         }
     }
 
-    public void setScissor()
+    public void setScissor(GuiGraphics guiGraphics)
     {
-        RenderHelper.startGlScissor(getLeft(), getTop(), width, height);
+        guiGraphics.enableScissor(getLeft(), getTop(), getRight(), getBottom());
     }
 
-    public void endScissor()
+    public void endScissor(GuiGraphics guiGraphics)
     {
-        RenderHelper.endGlScissor();
+        guiGraphics.disableScissor();
     }
 
     public void fill(GuiGraphics guiGraphics, int[] colours, int alpha, int border)
@@ -480,9 +480,10 @@ public abstract class Fragment<P extends Fragment>
 
 
 
+    // bindTexture removed in 1.21.8: setShaderTexture(int, ResourceLocation) no longer exists.
+    // Use GuiGraphics.blit(RenderPipelines.GUI_TEXTURED, rl, ...) at call sites.
     public static void bindTexture(ResourceLocation rl)
     {
-        com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, rl);
         me.ichun.mods.ichunutil.client.render.RenderHelper.setLastBoundTexture(rl);
     }
 

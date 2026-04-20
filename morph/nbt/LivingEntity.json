@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.LivingEntity",
+  "forClass": "net.minecraft.world.entity.LivingEntity",
   "modifiers": [
     {
       "key": "CustomName",

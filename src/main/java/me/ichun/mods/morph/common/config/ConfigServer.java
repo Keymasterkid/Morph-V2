@@ -29,19 +29,19 @@ public class ConfigServer extends ConfigBase
     public boolean healthScale = true;
 
     private List<String> supportedAttributes = Util.make(new ArrayList<>(), list -> {
-        list.add("minecraft:generic.max_health;more");
-        list.add("minecraft:generic.knockback_resistance;more");
-        list.add("minecraft:generic.movement_speed;more;0.1");
-        list.add("minecraft:generic.attack_damage;more");
-        list.add("minecraft:generic.attack_knockback;more");
-        list.add("minecraft:generic.attack_speed;more");
-        list.add("minecraft:generic.armor;more");
-        list.add("minecraft:generic.luck;more");
-        list.add("minecraft:horse.jump_strength;more");
+        list.add("minecraft:max_health;more");
+        list.add("minecraft:knockback_resistance;more");
+        list.add("minecraft:movement_speed;more;0.1");
+        list.add("minecraft:attack_damage;more");
+        list.add("minecraft:attack_knockback;more");
+        list.add("minecraft:attack_speed;more");
+        list.add("minecraft:armor;more");
+        list.add("minecraft:luck;more");
+        list.add("minecraft:jump_strength;more");
 
         //Replaced with neoforge attributes
         list.add("neoforge:swim_speed;more");
-        list.add("neoforge:reach_distance;more");
+        list.add("neoforge:entity_reach;more");
     });
 
     public List<String> disabledTraits = new ArrayList<>();

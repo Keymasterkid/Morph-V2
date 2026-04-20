@@ -23,7 +23,7 @@ public class MorphRenderHelper
         }
     }
 
-    public static float getShadowRadius(EntityRenderer<?> renderer) {
+    public static float getShadowRadius(EntityRenderer<?, ?> renderer) {
         try {
             return shadowRadiusField.getFloat(renderer);
         } catch (Exception e) {
@@ -31,7 +31,7 @@ public class MorphRenderHelper
         }
     }
 
-    public static void setShadowRadius(EntityRenderer<?> renderer, float radius) {
+    public static void setShadowRadius(EntityRenderer<?, ?> renderer, float radius) {
         try {
             shadowRadiusField.setFloat(renderer, radius);
         } catch (Exception e) {

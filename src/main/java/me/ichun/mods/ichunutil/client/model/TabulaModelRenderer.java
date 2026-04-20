@@ -63,20 +63,24 @@ public class TabulaModelRenderer {
         this.cubeList.add(new ModelBox(this, this.textureOffsetX, this.textureOffsetY, x, y, z, width, height, depth, deltaX, deltaY, deltaZ, this.mirror, this.textureWidth, this.textureHeight));
     }
 
-    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
         if (this.showModel) {
             if (!this.cubeList.isEmpty() || !this.childModels.isEmpty()) {
                 matrixStackIn.pushPose();
                 this.translateRotate(matrixStackIn);
-                this.doRender(matrixStackIn.last(), bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+                this.doRender(matrixStackIn.last(), bufferIn, packedLightIn, packedOverlayIn, color);
 
                 for (TabulaModelRenderer child : this.childModels) {
-                    child.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, red, green, blue, alpha);
+                    child.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, color);
                 }
 
                 matrixStackIn.popPose();
             }
         }
+    }
+
+    public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+        this.render(matrixStackIn, bufferIn, packedLightIn, packedOverlayIn, net.minecraft.util.ARGB.color((int)(alpha * 255), (int)(red * 255), (int)(green * 255), (int)(blue * 255)));
     }
 
     public void render(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn) {
@@ -98,7 +102,7 @@ public class TabulaModelRenderer {
         }
     }
 
-    public void doRender(PoseStack.Pose matrixEntryIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+    public void doRender(PoseStack.Pose matrixEntryIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color) {
         Matrix4f matrix4f = matrixEntryIn.pose();
         Matrix3f matrix3f = matrixEntryIn.normal();
 
@@ -117,10 +121,14 @@ public class TabulaModelRenderer {
                     float f5 = vertex.position.z() / 16.0F;
                     Vector4f vector4f = new Vector4f(f3, f4, f5, 1.0F);
                     vector4f.mul(matrix4f);
-                    bufferIn.addVertex(vector4f.x(), vector4f.y(), vector4f.z()).setColor(red, green, blue, alpha).setUv(vertex.textureU, vertex.textureV).setOverlay(packedOverlayIn).setLight(packedLightIn).setNormal(matrixEntryIn, f, f1, f2);
+                    bufferIn.addVertex(vector4f.x(), vector4f.y(), vector4f.z()).setColor(color).setUv(vertex.textureU, vertex.textureV).setOverlay(packedOverlayIn).setLight(packedLightIn).setNormal(matrixEntryIn, f, f1, f2);
                 }
             }
         }
+    }
+
+    public void doRender(PoseStack.Pose matrixEntryIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, float red, float green, float blue, float alpha) {
+        this.doRender(matrixEntryIn, bufferIn, packedLightIn, packedOverlayIn, net.minecraft.util.ARGB.color((int)(alpha * 255), (int)(red * 255), (int)(green * 255), (int)(blue * 255)));
     }
 
     public static class ModelBox {

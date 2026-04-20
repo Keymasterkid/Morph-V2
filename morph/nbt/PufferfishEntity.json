@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.fish.PufferfishEntity",
+  "forClass": "net.minecraft.world.entity.animal.Pufferfish",
   "modifiers": [
     {
       "key": "PuffState",

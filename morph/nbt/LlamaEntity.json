@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.horse.LlamaEntity",
+  "forClass": "net.minecraft.world.entity.animal.horse.Llama",
   "modifiers": [
     {
       "key": "Variant",

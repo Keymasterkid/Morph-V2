@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.horse.AbstractChestedHorseEntity",
+  "forClass": "net.minecraft.world.entity.animal.horse.AbstractChestedHorse",
   "modifiers": [
     {
       "key": "ChestedHorse",

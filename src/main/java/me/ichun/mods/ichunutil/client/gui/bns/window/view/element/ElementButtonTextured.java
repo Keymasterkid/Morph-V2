@@ -32,8 +32,8 @@ public class ElementButtonTextured<T extends ElementButtonTextured> extends Elem
     {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        RenderSystem.enableBlend();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        // RenderSystem.enableBlend();
+
         bindTexture(textureLocation);
 
         if(warping)

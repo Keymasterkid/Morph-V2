@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.SheepEntity",
+  "forClass": "net.minecraft.world.entity.animal.Sheep",
   "modifiers": [
     {
       "key": "Sheared",

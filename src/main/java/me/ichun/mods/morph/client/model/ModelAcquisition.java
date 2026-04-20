@@ -3,6 +3,7 @@ package me.ichun.mods.morph.client.model;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import me.ichun.mods.morph.client.entity.EntityAcquisition;
+import me.ichun.mods.morph.client.render.RenderEntityAcquisition;
 import me.ichun.mods.morph.common.Morph;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
@@ -13,12 +14,14 @@ import net.minecraft.util.Mth;
 
 import java.util.ArrayList;
 
-public class ModelAcquisition extends EntityModel<EntityAcquisition>
+public class ModelAcquisition extends EntityModel<RenderEntityAcquisition.AcquisitionRenderState>
 {
-    public ModelAcquisition()
+    public ModelAcquisition(ModelPart root)
     {
-        super(RenderType::entityTranslucentCull);
+        super(root, RenderType::entityTranslucent);
     }
+
+
 
     public void render(EntityAcquisition entity, float partialTick, PoseStack stack, VertexConsumer buffer, int light, int overlay)
     {
@@ -48,12 +51,7 @@ public class ModelAcquisition extends EntityModel<EntityAcquisition>
     }
 
     @Override
-    public void setupAnim(EntityAcquisition entityIn, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch)
-    {
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack matrixStackIn, VertexConsumer bufferIn, int packedLightIn, int packedOverlayIn, int color)
+    public void setupAnim(RenderEntityAcquisition.AcquisitionRenderState state)
     {
     }
 }

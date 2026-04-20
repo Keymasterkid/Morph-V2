@@ -37,10 +37,10 @@ public class ElementToggleRotatable<T extends ElementToggleRotatable> extends El
         {
             String s = reString(text, (rotationCount % 2 != 0 ? height : width) - 4);
 
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(getLeft() + (width / 2F), getTop() + (height / 2F), 0F);
-            guiGraphics.pose().mulPose(com.mojang.math.Axis.ZP.rotationDegrees(90F * rotationCount));
-            guiGraphics.pose().translate(- net.minecraft.client.Minecraft.getInstance().font.width(s) / 2F,  - (net.minecraft.client.Minecraft.getInstance().font.lineHeight) / 2F + 1, 0F);
+            guiGraphics.pose().pushMatrix();
+            guiGraphics.pose().translate((float)(getLeft() + (width / 2F)), (float)(getTop() + (height / 2F)));
+            guiGraphics.pose().rotate((float) Math.toRadians(90F * rotationCount));
+            guiGraphics.pose().translate((float)(- net.minecraft.client.Minecraft.getInstance().font.width(s) / 2F), (float)(- (net.minecraft.client.Minecraft.getInstance().font.lineHeight) / 2F + 1));
 
             //draw the text
             if(renderMinecraftStyle() > 0)
@@ -54,7 +54,7 @@ public class ElementToggleRotatable<T extends ElementToggleRotatable> extends El
                 drawString(guiGraphics, s, 0, 0);
             }
 
-            guiGraphics.pose().popPose();
+            guiGraphics.pose().popMatrix();
         }
     }
 

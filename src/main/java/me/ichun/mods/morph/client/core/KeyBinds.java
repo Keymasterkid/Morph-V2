@@ -23,14 +23,18 @@ public final class KeyBinds
 
     public static void init()
     {
+        if (keySelectorUp != null)
+        {
+            return;
+        }
         keySelectorUp = new KeyBind(new KeyMapping("morph.key.selectorUp", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_LEFT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
         keySelectorDown = new KeyBind(new KeyMapping("morph.key.selectorDown", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_RIGHT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
         keySelectorLeft = new KeyBind(new KeyMapping("morph.key.selectorLeft", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_LEFT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
         keySelectorRight = new KeyBind(new KeyMapping("morph.key.selectorRight", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_RIGHT_BRACKET), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null).setHoldable();
         keyFavourite = new KeyBind(new KeyMapping("morph.key.favourite", KeyConflictContext.IN_GAME, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_GRAVE_ACCENT), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, true));
         //Too many questions asking why it's "disabled"
-//        keyAbility = new KeyBind(new KeyMapping("morph.key.ability", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrMakeInput(com.mojang.blaze3d.platform.InputConstants.KEY_B), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, true));
-//        keyBiomass = new KeyBind(new KeyMapping("morph.key.biomass", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrMakeInput(com.mojang.blaze3d.platform.InputConstants.KEY_B), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null);
+        keyAbility = new KeyBind(new KeyMapping("morph.key.ability", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_B), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, true));
+        keyBiomass = new KeyBind(new KeyMapping("morph.key.biomass", KeyBind.ConflictContext.IN_GAME_MODIFIER_SENSITIVE, KeyModifier.SHIFT, com.mojang.blaze3d.platform.InputConstants.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_B), "key.categories.morph"), keyBind -> Morph.eventHandlerClient.handleInput(keyBind, false), null);
     }
 
 }

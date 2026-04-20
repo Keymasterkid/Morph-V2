@@ -23,7 +23,7 @@ public class ClientPayloadHandler {
         if(origin instanceof LivingEntity && acquired instanceof LivingEntity)
         {
             LivingEntity livingAcquired = (LivingEntity)acquired;
-            me.ichun.mods.morph.client.entity.EntityAcquisition ent = Morph.EntityTypes.ACQUISITION.create(mc.level);
+            me.ichun.mods.morph.client.entity.EntityAcquisition ent = Morph.EntityTypes.ACQUISITION.create(mc.level, net.minecraft.world.entity.EntitySpawnReason.LOAD);
             if (ent != null) {
                 ent.setTargets((LivingEntity)origin, livingAcquired, msg.isMorphAcquisition);
                 mc.level.addEntity(ent);
@@ -60,7 +60,11 @@ public class ClientPayloadHandler {
     }
 
     public static void handlePacketInvalidateClientHealth(PacketInvalidateClientHealth msg, IPayloadContext context) {
-        // Minecraft.getInstance().player.hasValidHealth = false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            // Trigger a dimension refresh which often forces a HUD/data update.
+            mc.player.refreshDimensions();
+        }
     }
 
     public static void handlePacketUpdateMorph(PacketUpdateMorph msg, IPayloadContext context) {

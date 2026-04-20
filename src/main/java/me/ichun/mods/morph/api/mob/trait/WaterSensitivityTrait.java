@@ -13,7 +13,7 @@ public class WaterSensitivityTrait extends Trait<WaterSensitivityTrait>
     @Override
     public void tick(float strength)
     {
-        if(!player.level().isClientSide && strength == 1F && player.isInWaterRainOrBubble())
+        if(!player.level().isClientSide && strength == 1F && player.isInWaterOrRain())
         {
             player.hurt(player.level().damageSources().drown(), strength);
         }

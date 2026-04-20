@@ -225,6 +225,19 @@ public class ModelHelper
         }
         done.put(renderer, part);
     }
+
+    public static void matchBoxesCount(Project.Part main, Project.Part target)
+    {
+        while(main.boxes.size() < target.boxes.size())
+        {
+            Project.Part.Box box = new Project.Part.Box(main);
+            box.posX = 0; box.posY = 0; box.posZ = 0;
+            box.dimX = 0; box.dimY = 0; box.dimZ = 0;
+            box.expandX = 0; box.expandY = 0; box.expandZ = 0;
+            box.texOffX = 0; box.texOffY = 0;
+            main.boxes.add(box);
+        }
+    }
     
     public static Project.Part createInterimPart(Project.Part prevPart, Project.Part nextPart, float prog)
     {

@@ -67,11 +67,9 @@ public class Theme
     public static void loadTheme(Theme themeToLoad)
     {
         loadTheme(INSTANCE, themeToLoad);
-        Block block = net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(ResourceLocation.parse(INSTANCE.workspaceBlock));
-        if(block != null)
-        {
-            INSTANCE.block = block;
-        }
+        net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(ResourceLocation.parse(INSTANCE.workspaceBlock)).ifPresent(reference -> {
+            INSTANCE.block = reference.value();
+        });
     }
 
     public static void loadTheme(Theme theme, Theme themeToLoad)
@@ -133,6 +131,6 @@ public class Theme
 
     public static int getAsHex(int[] set)
     {
-        return (set[0] << 16) + (set[1] << 8) + (set[2]);
+        return 0xFF000000 | (set[0] << 16) | (set[1] << 8) | (set[2]);
     }
 }

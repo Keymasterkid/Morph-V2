@@ -219,7 +219,7 @@ public class ElementTextField extends Element
             widget.setTextColorUneditable(Theme.getAsHex(getTheme().font));
             widget.render(guiGraphics, mouseX, mouseY, partialTick);
         }
-        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
+
     }
 
     

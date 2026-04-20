@@ -136,9 +136,9 @@ public class FlightFlapAbility extends Ability<FlightFlapAbility>
     {
         //Mostly taken from entity.jump
         double d = velocityToAdd * getJumpFactor() * strength;
-        if(player.hasEffect(MobEffects.JUMP))
+        if(player.hasEffect(MobEffects.JUMP_BOOST))
         {
-            d += 0.1D * (player.getEffect(MobEffects.JUMP).getAmplifier() + 1);
+            d += 0.1D * (player.getEffect(MobEffects.JUMP_BOOST).getAmplifier() + 1);
         }
 
         Vec3 motion = player.getDeltaMovement();

@@ -61,7 +61,7 @@ public abstract class View<P extends Window<? extends IWindows>> extends Fragmen
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        setScissor();
+        setScissor(guiGraphics);
         //render our background
         renderBackground(guiGraphics);
 
@@ -71,7 +71,7 @@ public abstract class View<P extends Window<? extends IWindows>> extends Fragmen
             element.render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
-        resetScissorToParent();
+        resetScissorToParent(guiGraphics);
     }
 
     public void renderBackground(GuiGraphics guiGraphics)

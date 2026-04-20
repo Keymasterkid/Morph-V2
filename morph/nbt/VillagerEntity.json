@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.merchant.villager.VillagerEntity",
+  "forClass": "net.minecraft.world.entity.npc.Villager",
   "modifiers": [
     {
       "key": "VillagerData",

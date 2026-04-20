@@ -127,11 +127,11 @@ public class CommandMorph
                                                         )
                                                 )
                                                 .then(Commands.literal("type")
-                                                        .then(Commands.argument("entity_type", net.minecraft.commands.arguments.ResourceLocationArgument.id()).suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
+                                                        .then(Commands.argument("entity_type", net.minecraft.commands.arguments.ResourceLocationArgument.id()).suggests((context, builder) -> SuggestionProviders.SUMMONABLE_ENTITIES.getSuggestions((com.mojang.brigadier.context.CommandContext) context, builder))
                                                                 .then(Commands.argument("nbt", CompoundTagArgument.compoundTag())
-                                                                        .executes(context -> createMorph(context.getSource(), EntityArgument.getPlayer(context, "player"), net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "entity_type"), CompoundTagArgument.getCompoundTag(context, "nbt"), true))
+                                                                        .executes(context -> createMorph((net.minecraft.commands.CommandSourceStack) context.getSource(), EntityArgument.getPlayer(context, "player"), net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "entity_type"), CompoundTagArgument.getCompoundTag(context, "nbt"), true))
                                                                 )
-                                                                .executes(context -> createMorph(context.getSource(), EntityArgument.getPlayer(context, "player"), net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "entity_type"), new CompoundTag(), true))
+                                                                .executes(context -> createMorph((net.minecraft.commands.CommandSourceStack) context.getSource(), EntityArgument.getPlayer(context, "player"), net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "entity_type"), new CompoundTag(), true))
                                                         )
                                                 )
                                                 .then(Commands.literal("player")
@@ -164,11 +164,11 @@ public class CommandMorph
                                                         )
                                                 )
                                                 .then(Commands.literal("type")
-                                                        .then(Commands.argument("entity_type", net.minecraft.commands.arguments.ResourceLocationArgument.id()).suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
+                                                        .then(Commands.argument("entity_type", net.minecraft.commands.arguments.ResourceLocationArgument.id()).suggests((context, builder) -> SuggestionProviders.SUMMONABLE_ENTITIES.getSuggestions((com.mojang.brigadier.context.CommandContext) context, builder))
                                                                 .then(Commands.argument("nbt", CompoundTagArgument.compoundTag())
-                                                                        .executes(context -> createMorph(context.getSource(), EntityArgument.getPlayer(context, "player"), net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "entity_type"), CompoundTagArgument.getCompoundTag(context, "nbt"), false))
+                                                                        .executes(context -> createMorph((net.minecraft.commands.CommandSourceStack) context.getSource(), EntityArgument.getPlayer(context, "player"), net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "entity_type"), CompoundTagArgument.getCompoundTag(context, "nbt"), false))
                                                                 )
-                                                                .executes(context -> createMorph(context.getSource(), EntityArgument.getPlayer(context, "player"), net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "entity_type"), new CompoundTag(), false))
+                                                                .executes(context -> createMorph((net.minecraft.commands.CommandSourceStack) context.getSource(), EntityArgument.getPlayer(context, "player"), net.minecraft.commands.arguments.ResourceLocationArgument.getId(context, "entity_type"), new CompoundTag(), false))
                                                         )
                                                 )
                                                 .then(Commands.literal("player")
@@ -308,7 +308,7 @@ public class CommandMorph
         CompoundTag nbtCopy = nbt.copy();
         nbtCopy.putString("id", type.toString());
         ServerLevel serverLevel = source.getLevel();
-        Entity entity = EntityType.loadEntityRecursive(nbtCopy, serverLevel, ent -> ent);
+        Entity entity = EntityType.loadEntityRecursive(nbtCopy, serverLevel, net.minecraft.world.entity.EntitySpawnReason.LOAD, ent -> ent);
 
         if(entity == null)
         {

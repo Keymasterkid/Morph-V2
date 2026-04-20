@@ -63,10 +63,7 @@ public class WindowGreyout<M extends Workspace> extends Window<M>
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
         RenderHelper.drawColour(guiGraphics, 0, 0, 0, 150, getLeft(), getTop(), width, height, 0);
-        RenderSystem.disableBlend();
         if(!parent.getEventListeners().contains(attachedWindow))
         {
             parent.removeWindow(this);

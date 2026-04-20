@@ -3,11 +3,15 @@ package me.ichun.mods.ichunutil.common.network;
 import it.unimi.dsi.fastutil.objects.Object2ByteOpenHashMap;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -49,9 +53,13 @@ public class PacketChannel
         registrar.playBidirectional(
                 PacketHolderPayload.type(channelId),
                 PacketHolderPayload.codec(this),
+                // Client handler
+                (payload, context) -> payload.inner().process(context),
+                // Server handler
                 (payload, context) -> payload.inner().process(context)
         );
     }
+
 
     /** Convenience: auto-register on the given mod event bus. */
     public void registerWithBus(IEventBus bus)
@@ -64,22 +72,24 @@ public class PacketChannel
 
     public void sendToServer(AbstractPacket packet)
     {
-        net.neoforged.neoforge.network.PacketDistributor.sendToServer(new PacketHolderPayload(channelId, packet));
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            ClientPacketDistributor.sendToServer((CustomPacketPayload) new PacketHolderPayload(channelId, packet));
+        }
     }
 
     public void sendTo(AbstractPacket packet, ServerPlayer player)
     {
-        PacketDistributor.sendToPlayer(player, new PacketHolderPayload(channelId, packet));
+        PacketDistributor.sendToPlayer(player, (CustomPacketPayload) new PacketHolderPayload(channelId, packet));
     }
 
     public void sendToPlayersTrackingEntityAndSelf(AbstractPacket packet, net.minecraft.world.entity.Entity entity)
     {
-        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, new PacketHolderPayload(channelId, packet));
+        PacketDistributor.sendToPlayersTrackingEntityAndSelf(entity, (CustomPacketPayload) new PacketHolderPayload(channelId, packet));
     }
 
     public void sendToAll(AbstractPacket packet)
     {
-        PacketDistributor.sendToAllPlayers(new PacketHolderPayload(channelId, packet));
+        PacketDistributor.sendToAllPlayers((CustomPacketPayload) new PacketHolderPayload(channelId, packet));
     }
 
     public void sendToAllExcept(AbstractPacket packet, ServerPlayer except)
@@ -88,7 +98,7 @@ public class PacketChannel
         {
             for (ServerPlayer sp : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers())
             {
-                if (sp != except) PacketDistributor.sendToPlayer(sp, new PacketHolderPayload(channelId, packet));
+                if (sp != except) PacketDistributor.sendToPlayer(sp, (CustomPacketPayload) new PacketHolderPayload(channelId, packet));
             }
         }
     }

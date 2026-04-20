@@ -48,9 +48,18 @@ public class KeyBind
         this.pressConsumer = pressConsumer;
         this.releaseConsumer = releaseConsumer;
 
-        KEY_MAPPINGS.add(this.keyBinding);
+        boolean exists = false;
+        for (KeyMapping mapping : KEY_MAPPINGS) {
+            if (mapping.getName().equals(this.keyBinding.getName())) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            KEY_MAPPINGS.add(this.keyBinding);
+        }
 
-        NeoForge.EVENT_BUS.register(this);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.register(this);
     }
 
     public KeyBind setTickConsumer(Consumer<KeyBind> tickConsumer)

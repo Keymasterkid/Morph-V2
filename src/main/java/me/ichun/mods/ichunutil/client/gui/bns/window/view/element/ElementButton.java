@@ -1,7 +1,6 @@
 package me.ichun.mods.ichunutil.client.gui.bns.window.view.element;
 
 import net.minecraft.client.gui.GuiGraphics;
-import com.mojang.blaze3d.systems.RenderSystem;
 import me.ichun.mods.ichunutil.client.gui.bns.window.Fragment;
 import net.minecraft.client.resources.language.I18n;
 
@@ -35,8 +34,6 @@ public class ElementButton<T extends ElementButton> extends ElementClickable<T>
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        RenderSystem.enableBlend();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         if(renderBackground)

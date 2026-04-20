@@ -3,6 +3,7 @@ package me.ichun.mods.morph.common.morph.save;
 import me.ichun.mods.morph.api.biomass.BiomassUpgrade;
 import me.ichun.mods.morph.api.morph.MorphVariant;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.UUIDUtil;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -99,7 +100,7 @@ public class PlayerMorphData
 
     public CompoundTag write(CompoundTag tag)
     {
-        tag.putUUID("owner", owner);
+        tag.putIntArray("owner", net.minecraft.core.UUIDUtil.uuidToIntArray(owner));
         tag.putInt("morphCount", morphs.size());
         for(int i = 0; i < morphs.size(); i++)
         {
@@ -119,22 +120,22 @@ public class PlayerMorphData
 
     public void read(CompoundTag tag)
     {
-        owner = tag.getUUID("owner");
+        owner = tag.getIntArray("owner").map(net.minecraft.core.UUIDUtil::uuidFromIntArray).orElse(null);
 
         morphs.clear();
-        int count = tag.getInt("morphCount");
+        int count = tag.getInt("morphCount").orElse(0);
         for(int i = 0; i < count; i++)
         {
-            morphs.add(MorphVariant.createFromNBT(tag.getCompound("morph_" + i)));
+            morphs.add(MorphVariant.createFromNBT(tag.getCompound("morph_" + i).orElse(new net.minecraft.nbt.CompoundTag())));
         }
 
-        biomass = tag.getDouble("biomass");
+        biomass = tag.getDouble("biomass").orElse(0.0D);
 
         upgrades.clear();
-        count = tag.getInt("upgradeCount");
+        count = tag.getInt("upgradeCount").orElse(0);
         for(int i = 0; i < count; i++)
         {
-            upgrades.add(BiomassUpgrade.createFromNBT(tag.getCompound("upgrade_" + i)));
+            upgrades.add(BiomassUpgrade.createFromNBT(tag.getCompound("upgrade_" + i).orElse(new net.minecraft.nbt.CompoundTag())));
         }
     }
 }

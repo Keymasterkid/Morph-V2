@@ -55,6 +55,17 @@ public class NbtModifier
 
     private void addModifier(Modifier modifier)
     {
+        addModifierExact(modifier);
+
+        // Also add the snake_case variant for 1.20+ backwards compatibility
+        String snakeCaseKey = modifier.key.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase(java.util.Locale.ROOT);
+        if (!snakeCaseKey.equals(modifier.key)) {
+            addModifierExact(modifier.copyToSnakeCase());
+        }
+    }
+
+    private void addModifierExact(Modifier modifier)
+    {
         if(modifier.keep != null) //set to strip
         {
             if(modifier.keep)
@@ -91,8 +102,7 @@ public class NbtModifier
         HashSet<String> keysKept = new HashSet<>(toKeep);
         keysKept.addAll(keyToModifier.keySet());
 
-        //Check the keys the tags have, if we don't have it in our set, remove it.
-        HashSet<String> tagKeys = new HashSet<>(tag.getAllKeys());
+        HashSet<String> tagKeys = new HashSet<>(tag.keySet());
         for(String s : tagKeys)
         {
             if(!keysKept.contains(s))
@@ -134,6 +144,23 @@ public class NbtModifier
             return copy;
         }
 
+        public Modifier copyToSnakeCase()
+        {
+            Modifier copy = new Modifier();
+            copy.key = key.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase(java.util.Locale.ROOT);
+            copy.keep = keep;
+            if(nestedModifiers != null)
+            {
+                copy.nestedModifiers = new ArrayList<>();
+                for(Modifier nestedModifier : nestedModifiers)
+                {
+                    copy.nestedModifiers.add(nestedModifier.copyToSnakeCase());
+                }
+            }
+            copy.value = value;
+            return copy;
+        }
+
         public boolean setupValue()
         {
             if(keep != null)
@@ -155,10 +182,9 @@ public class NbtModifier
             if(value != null)
             {
                 //Taken from TagParser
-                TagParser TagParser = new TagParser(new StringReader(value));
                 try
                 {
-                    nbtValue = TagParser.readValue();
+                    nbtValue = net.minecraft.nbt.TagParser.create(net.minecraft.nbt.NbtOps.INSTANCE).parseFully(value);
                     return true;
                 }
                 catch(CommandSyntaxException e)
@@ -196,7 +222,7 @@ public class NbtModifier
                 }
 
                 //Check the keys the tags have, if we don't have it in our set, remove it.
-                HashSet<String> tagKeys = new HashSet<>(compoundTag.getAllKeys());
+                HashSet<String> tagKeys = new HashSet<>(compoundTag.keySet());
                 for(String s : tagKeys)
                 {
                     if(!keep.contains(s))

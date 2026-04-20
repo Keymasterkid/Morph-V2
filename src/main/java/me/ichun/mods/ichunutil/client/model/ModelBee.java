@@ -5,6 +5,5 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.resources.ResourceLocation;
 public class ModelBee extends Model {
     public static final ResourceLocation TEX_BEE = ResourceLocation.fromNamespaceAndPath("ichunutil", "textures/model/bee.png");
-    public ModelBee() { super(net.minecraft.client.renderer.RenderType::entityCutoutNoCull); }
-    public void renderToBuffer(PoseStack p, VertexConsumer v, int i1, int i2, int i3) {}
+    public ModelBee(net.minecraft.client.model.geom.ModelPart root) { super(root, net.minecraft.client.renderer.RenderType::entityCutoutNoCull); }
 }

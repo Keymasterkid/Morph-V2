@@ -53,7 +53,7 @@ public class EventHandlerClient
 
             for(RenderTarget buffer : RenderHelper.frameBuffers)
             {
-                buffer.resize(screenWidth, screenHeight, Minecraft.ON_OSX);
+                buffer.resize(screenWidth, screenHeight);
             }
         }
     }

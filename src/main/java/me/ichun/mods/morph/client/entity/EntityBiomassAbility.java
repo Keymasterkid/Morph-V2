@@ -28,13 +28,22 @@ public class EntityBiomassAbility extends Entity
     public int age;
     public MorphRenderHandler.ModelPartCapture capture = new MorphRenderHandler.ModelPartCapture();
 
-    public EntityBiomassAbility(EntityType<?> entityTypeIn, Level levelIn)
+    public EntityBiomassAbility(EntityType<? extends EntityBiomassAbility> entityTypeIn, Level levelIn)
+    {
+        this(entityTypeIn, levelIn, net.minecraft.world.entity.EntitySpawnReason.LOAD); // Default for compatibility
+    }
+
+    public EntityBiomassAbility(EntityType<? extends EntityBiomassAbility> entityTypeIn, Level levelIn, net.minecraft.world.entity.EntitySpawnReason spawnReason)
     {
         super(entityTypeIn, levelIn);
         setInvisible(true);
         setInvulnerable(true);
-        // IDs are managed by Level in 1.21.1, but we might need a custom one for client-only fake entities
-        // However, Entity.setId is final. We'll just rely on the level's ID assignment if possible.
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel level, net.minecraft.world.damagesource.DamageSource source, float amount)
+    {
+        return false;
     }
 
     public EntityBiomassAbility setInfo(@Nonnull Player player, int fadeTime, int solidTime)
@@ -88,11 +97,14 @@ public class EntityBiomassAbility extends Entity
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {}
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag compound){}
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput compound)
+    {
+    }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag compound){}
-
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput compound)
+    {
+    }
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity)
     {

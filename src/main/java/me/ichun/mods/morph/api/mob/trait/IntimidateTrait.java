@@ -38,7 +38,7 @@ public class IntimidateTrait extends Trait<IntimidateTrait>
     {
         if(idToIntimidate != null)
         {
-            idIntimidate = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(idToIntimidate));
+            idIntimidate = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(idToIntimidate)).map(net.minecraft.core.Holder::value).orElse(null);
         }
         else if(classToIntimidate != null)
         {

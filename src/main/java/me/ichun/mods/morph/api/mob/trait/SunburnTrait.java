@@ -53,7 +53,7 @@ public class SunburnTrait extends Trait<SunburnTrait>
 
     public boolean isPlayerInDaylight() //taken from Mob.isInDaylight()
     {
-        if (player.level().isDay() && !player.level().isClientSide) {
+        if (player.level().getDayTime() % 24000L < 12000L && !player.level().isClientSide) {
             float f = player.getLightLevelDependentMagicValue();
             BlockPos blockpos = player.getVehicle() instanceof Boat ? BlockPos.containing(player.getX(), player.getY(), player.getZ()).above() : BlockPos.containing(player.getX(), player.getY(), player.getZ());
             if (f > 0.5F && player.getRandom().nextFloat() * 30.0F < (f - 0.4F) * 2.0F && player.level().canSeeSky(blockpos)) {

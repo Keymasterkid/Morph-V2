@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.MobEntity",
+  "forClass": "net.minecraft.world.entity.Mob",
   "modifiers": [
     {
       "key": "PersistenceRequired",

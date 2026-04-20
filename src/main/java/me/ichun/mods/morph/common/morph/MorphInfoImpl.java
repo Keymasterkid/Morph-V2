@@ -34,9 +34,9 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 import javax.annotation.Nullable;
 import java.util.*;
 
-public class MorphInfoImpl extends MorphInfo
-{
-    public static final ResourceLocation MORPH_ATTRIBUTE_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath(Morph.MOD_ID, "morph_attribute_modifier");
+public class MorphInfoImpl extends MorphInfo {
+    public static final ResourceLocation MORPH_ATTRIBUTE_MODIFIER_ID = ResourceLocation
+            .fromNamespaceAndPath(Morph.MOD_ID, "morph_attribute_modifier");
 
     private final Random rand = new Random();
 
@@ -45,40 +45,35 @@ public class MorphInfoImpl extends MorphInfo
     @OnlyIn(Dist.CLIENT)
     public EntityBiomassAbility entityBiomassAbility;
 
-    public MorphInfoImpl(Player player)
-    {
+    public MorphInfoImpl(Player player) {
         super(player);
     }
 
     @Override
-    public void tick()
-    {
-        if(!isMorphed())
-        {
+    public void tick() {
+        if (!isMorphed()) {
             return;
         }
 
         float transitionProgress = getTransitionProgressLinear(1F);
 
-        if(firstTick)
-        {
+        if (firstTick) {
             firstTick = false;
             player.refreshDimensions();
             applyAttributeModifiers(transitionProgress);
         }
 
-        if(transitionProgress < 1.0F) // is morphing
+        if (transitionProgress < 1.0F) // is morphing
         {
-            if(!player.level().isClientSide)
-            {
-                if(playSoundTime < 0)
-                {
-                    playSoundTime = Math.max(0, (int)((morphingTime - 60) / 2F)); // our sounds are 3 seconds long. play it in the middle of the morph
+            if (!player.level().isClientSide) {
+                if (playSoundTime < 0) {
+                    playSoundTime = Math.max(0, (int) ((morphingTime - 60) / 2F)); // our sounds are 3 seconds long.
+                                                                                   // play it in the middle of the morph
                 }
 
-                if(morphTime == playSoundTime)
-                {
-                    // player.level().playMovingSound(null, player, Morph.Sounds.MORPH.get(), player.getSoundSource(), 1.0F, 1.0F);
+                if (morphTime == playSoundTime) {
+                    player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                            Morph.Sounds.MORPH.get(), player.getSoundSource(), 1.0F, 1.0F);
                 }
             }
             prevState.tick(player, transitionProgress > 0F);
@@ -88,15 +83,12 @@ public class MorphInfoImpl extends MorphInfo
             float nextStateTraitStrength = Mth.clamp((transitionProgress - 0.5F) / 0.5F, 0F, 1F);
 
             ArrayList<Trait<?>> prevTraits = new ArrayList<>(prevState.traits);
-            for(Trait trait : nextState.traits)
-            {
+            for (Trait trait : nextState.traits) {
                 boolean foundTranslatableTrait = false;
-                for(int i = prevTraits.size() - 1; i >= 0; i--)
-                {
+                for (int i = prevTraits.size() - 1; i >= 0; i--) {
                     Trait<?> prevTrait = prevTraits.get(i);
-                    if(prevTrait.canTransitionTo(trait))
-                    {
-                        prevTraits.remove(i); //remove it
+                    if (prevTrait.canTransitionTo(trait)) {
+                        prevTraits.remove(i); // remove it
 
                         foundTranslatableTrait = true;
 
@@ -106,91 +98,79 @@ public class MorphInfoImpl extends MorphInfo
                     }
                 }
 
-                if(!foundTranslatableTrait) //only nextState has this trait
+                if (!foundTranslatableTrait) // only nextState has this trait
                 {
                     trait.doTick(nextStateTraitStrength);
                 }
             }
 
-            for(Trait<?> value : prevTraits)
-            {
+            for (Trait<?> value : prevTraits) {
                 value.doTick(prevStateTraitStrength);
             }
-        }
-        else
-        {
+        } else {
             nextState.tick(player, false);
             nextState.tickTraits();
         }
 
         morphTime++;
-        if(morphTime <= morphingTime) //still morphing
+        if (morphTime <= morphingTime) // still morphing
         {
             player.refreshDimensions();
             applyAttributeModifiers(transitionProgress);
-        }
-        else if(Morph.configServer.aggressiveSizeRecalculation)
-        {
+        } else if (Morph.configServer.aggressiveSizeRecalculation) {
             player.refreshDimensions();
         }
 
-        if(morphTime == morphingTime)
-        {
+        if (morphTime == morphingTime) {
             removeAttributeModifiersFromPrevState();
-            setPrevState(null); //bye bye last state. We don't need you anymore.
+            setPrevState(null); // bye bye last state. We don't need you anymore.
 
-            if(player.level().isClientSide)
-            {
+            if (player.level().isClientSide) {
                 endMorphOnClient();
             }
 
-            if(nextState.variant.id.equals(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.PLAYER)) && nextState.variant.thisVariant.identifier.equals(MorphVariant.IDENTIFIER_DEFAULT_PLAYER_STATE))
-            {
+            if (nextState.variant.id
+                    .equals(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(EntityType.PLAYER))
+                    && nextState.variant.thisVariant.identifier.equals(MorphVariant.IDENTIFIER_DEFAULT_PLAYER_STATE)) {
                 setNextState(null);
             }
         }
 
-        if(player.level().isClientSide)
-        {
-            if(entityBiomassAbility != null && entityBiomassAbility.isRemoved())
-            {
-                entityBiomassAbility = null; //have it, GC
+        if (player.level().isClientSide) {
+            if (entityBiomassAbility != null && entityBiomassAbility.isRemoved()) {
+                entityBiomassAbility = null; // have it, GC
             }
         }
     }
 
-    public void applyAttributeModifiers(float transitionProgress)
-    {
-        if(player.level().isClientSide) //we don't touch the attributes on the client
+    public void applyAttributeModifiers(float transitionProgress) {
+        if (player.level().isClientSide) // we don't touch the attributes on the client
         {
             return;
         }
 
         HashMap<net.minecraft.world.entity.ai.attributes.Attribute, Double> attributeModifierAmount = new HashMap<>();
 
-
-        //Add the next state's attribute modifier amounts
-        for(String key : nextState.variant.nbtMorph.getAllKeys())
-        {
-            if(key.startsWith("attr_")) //it's an attribute key
+        // Add the next state's attribute modifier amounts
+        for (String key : nextState.variant.nbtMorph.keySet()) {
+            if (key.startsWith("attr_")) // it's an attribute key
             {
                 ResourceLocation id = ResourceLocation.parse(key.substring(5));
 
-                if(id.toString().equals("minecraft:generic.max_health") && !Morph.configServer.healthScale)
-                {
+                if (id.toString().equals("minecraft:max_health") && !Morph.configServer.healthScale) {
                     continue;
                 }
 
-                BuiltInRegistries.ATTRIBUTE.getHolder(id).ifPresent(holder -> {
+                BuiltInRegistries.ATTRIBUTE.get(id).ifPresent(holder -> {
                     AttributeInstance playerAttribute = player.getAttribute(holder);
-                    if(playerAttribute != null)
-                    {
+                    if (playerAttribute != null) {
                         double baseValue = playerAttribute.getBaseValue();
-                        double modifierValue = nextState.variant.nbtMorph.getDouble(key) - baseValue;
+                        double modifierValue = nextState.variant.nbtMorph.getDouble(key).orElse(0.0D) - baseValue;
 
-                        // If we're transitioning and this is max health, don't apply nextState's modifier yet
-                        if (transitionProgress < 1.0F && holder.value() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
-                            modifierValue = 0;
+                        // Skip MAX_HEALTH during transition to prevent per-tick screen shaking
+                        if (transitionProgress < 1.0F && transitionProgress > 0F && holder
+                                .value() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
+                            return; // skip - will be applied when transition completes
                         }
 
                         attributeModifierAmount.put(holder.value(), modifierValue);
@@ -199,45 +179,33 @@ public class MorphInfoImpl extends MorphInfo
             }
         }
 
-        if(transitionProgress < 1.0F && prevState != null) //we still have a prev state, aka still morphing
+        if (transitionProgress < 1.0F && prevState != null) // we still have a prev state, aka still morphing
         {
             HashSet<net.minecraft.world.entity.ai.attributes.Attribute> prevStateAttrs = new HashSet<>();
-            for(String key : prevState.variant.nbtMorph.getAllKeys())
-            {
-                if(key.startsWith("attr_")) //it's an attribute key
+            for (String key : prevState.variant.nbtMorph.keySet()) {
+                if (key.startsWith("attr_")) // it's an attribute key
                 {
                     ResourceLocation id = ResourceLocation.parse(key.substring(5));
 
-                    if(id.toString().equals("minecraft:generic.max_health") && !Morph.configServer.healthScale)
-                    {
+                    if (id.toString().equals("minecraft:max_health") && !Morph.configServer.healthScale) {
                         continue;
                     }
 
-                    BuiltInRegistries.ATTRIBUTE.getHolder(id).ifPresent(holder -> {
+                    BuiltInRegistries.ATTRIBUTE.get(id).ifPresent(holder -> {
                         AttributeInstance playerAttribute = player.getAttribute(holder);
-                        if(playerAttribute != null)
-                        {
+                        if (playerAttribute != null) {
                             double baseValue = playerAttribute.getBaseValue();
-                            double modifierValue = prevState.variant.nbtMorph.getDouble(key) - baseValue;
+                            double modifierValue = prevState.variant.nbtMorph.getDouble(key).orElse(0.0D) - baseValue;
 
-                            if(attributeModifierAmount.containsKey(holder.value())) //the nextState also has this attribute
+                            if (attributeModifierAmount.containsKey(holder.value())) // the nextState also has this
+                                                                                     // attribute
                             {
-                                double val;
-                                if (holder.value() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
-                                    val = modifierValue; // Stay at prevState's health during transition
-                                } else {
-                                    val = modifierValue + (attributeModifierAmount.get(holder.value()) - modifierValue) * transitionProgress;
-                                }
+                                double val = modifierValue
+                                        + (attributeModifierAmount.get(holder.value()) - modifierValue)
+                                                * transitionProgress;
                                 attributeModifierAmount.put(holder.value(), val);
-                            }
-                            else
-                            {
-                                double val;
-                                if (holder.value() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
-                                    val = modifierValue; // Stay at prevState's health during transition
-                                } else {
-                                    val = modifierValue * (1F - transitionProgress);
-                                }
+                            } else {
+                                double val = modifierValue * (1F - transitionProgress);
                                 attributeModifierAmount.put(holder.value(), val);
                             }
                             prevStateAttrs.add(holder.value());
@@ -246,53 +214,58 @@ public class MorphInfoImpl extends MorphInfo
                 }
             }
 
-            for(Map.Entry<net.minecraft.world.entity.ai.attributes.Attribute, Double> e : attributeModifierAmount.entrySet())
-            {
-                if(!prevStateAttrs.contains(e.getKey())) //this is added by nextState, we need to decrease the modifier since we're still transitioning
+            for (Map.Entry<net.minecraft.world.entity.ai.attributes.Attribute, Double> e : attributeModifierAmount
+                    .entrySet()) {
+                if (!prevStateAttrs.contains(e.getKey())) // this is added by nextState, we need to decrease the
+                                                          // modifier since we're still transitioning
                 {
-                    // Skip max health here, we handled it above
-                    if (e.getKey() != net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value()) {
-                        e.setValue(e.getValue() * transitionProgress);
-                    }
+                    e.setValue(e.getValue() * transitionProgress);
                 }
             }
         }
 
-        //add these modifiers to the player
-        for(Map.Entry<net.minecraft.world.entity.ai.attributes.Attribute, Double> e : attributeModifierAmount.entrySet())
-        {
-            net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(e.getKey());
+        // add these modifiers to the player
+        for (Map.Entry<net.minecraft.world.entity.ai.attributes.Attribute, Double> e : attributeModifierAmount
+                .entrySet()) {
+            net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder = BuiltInRegistries.ATTRIBUTE
+                    .wrapAsHolder(e.getKey());
             AttributeInstance playerAttribute = player.getAttribute(holder);
-            if(playerAttribute != null)
-            {
-                rand.setSeed(Math.abs("MorphAttr".hashCode() * 1231543L + BuiltInRegistries.ATTRIBUTE.getKey(e.getKey()).toString().hashCode() * 268L));
-                ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath("morph", "attr_" + BuiltInRegistries.ATTRIBUTE.getKey(e.getKey()).getPath());
+            if (playerAttribute != null) {
+                rand.setSeed(Math.abs("MorphAttr".hashCode() * 1231543L
+                        + BuiltInRegistries.ATTRIBUTE.getKey(e.getKey()).toString().hashCode() * 268L));
+                ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath("morph",
+                        "attr_" + BuiltInRegistries.ATTRIBUTE.getKey(e.getKey()).getPath());
 
                 double lastRatio = 0D;
-                boolean isMaxHealth = e.getKey() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH.value();
+                boolean isMaxHealth = e.getKey() == net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH
+                        .value();
 
-                if(isMaxHealth) //special casing for the max health
+                if (isMaxHealth) // special casing for the max health
                 {
                     lastRatio = player.getHealth() / player.getMaxHealth();
                 }
 
-                //you can't reapply the same modifier, so lets remove it first
+                // you can't reapply the same modifier, so lets remove it first
                 playerAttribute.removeModifier(modifierId);
 
-                if(e.getValue() != 0) //if the modifier is non-zero, add it
+                if (e.getValue() != 0) // if the modifier is non-zero, add it
                 {
-                    playerAttribute.addTransientModifier(new AttributeModifier(modifierId, e.getValue(), AttributeModifier.Operation.ADD_VALUE));
+                    playerAttribute.addTransientModifier(
+                            new AttributeModifier(modifierId, e.getValue(), AttributeModifier.Operation.ADD_VALUE));
 
-                    if(isMaxHealth && lastRatio > 0D) //we're doing the max health
+                    if (isMaxHealth && lastRatio > 0D) // we're doing the max health
                     {
                         double currentRatio = player.getHealth() / player.getMaxHealth();
 
-                        if(currentRatio != lastRatio) //if ratio is different, change the health
+                        if (currentRatio != lastRatio) // if ratio is different, change the health
                         {
                             double targetHealth = lastRatio * player.getMaxHealth();
                             double extraHealth = targetHealth - player.getHealth();
 
-                            // Morph.channel.sendTo(new PacketInvalidateClientHealth(), (net.minecraft.server.level.ServerPlayer) player);
+                            // Morph.LOGGER.info("Morph MAX_HEALTH modifier applied: " + e.getValue() + ",
+                            // extraHealth=" + extraHealth);
+                            Morph.channel.sendTo(new PacketInvalidateClientHealth(),
+                                    (net.minecraft.server.level.ServerPlayer) player);
                             player.setHealth(player.getHealth() + (float) extraHealth);
                         }
                     }
@@ -301,39 +274,39 @@ public class MorphInfoImpl extends MorphInfo
         }
     }
 
-    public void removeAttributeModifiersFromPrevState()
-    {
-        if(prevState != null) //just in case?
+    public void removeAttributeModifiersFromPrevState() {
+        if (prevState != null) // just in case?
         {
             HashSet<net.minecraft.world.entity.ai.attributes.Attribute> attributesToRemove = new HashSet<>();
 
-            //Add the prev state's attributes
-            for(String key : prevState.variant.nbtMorph.getAllKeys())
-            {
-                if(key.startsWith("attr_")) //it's an attribute key
+            // Add the prev state's attributes
+            for (String key : prevState.variant.nbtMorph.keySet()) {
+                if (key.startsWith("attr_")) // it's an attribute key
                 {
                     ResourceLocation id = ResourceLocation.parse(key.substring(5));
-                    BuiltInRegistries.ATTRIBUTE.getHolder(id).ifPresent(holder -> attributesToRemove.add(holder.value()));
+                    net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.get(id)
+                            .ifPresent(holder -> attributesToRemove.add(holder.value()));
                 }
             }
 
-            //Remove attributes that nextState also has (we keep those active, they stay morphed)
-            for(String key : nextState.variant.nbtMorph.getAllKeys())
-            {
-                if(key.startsWith("attr_")) //it's an attribute key
+            // Remove attributes that nextState also has (we keep those active, they stay
+            // morphed)
+            for (String key : nextState.variant.nbtMorph.keySet()) {
+                if (key.startsWith("attr_")) // it's an attribute key
                 {
                     ResourceLocation id = ResourceLocation.parse(key.substring(5));
-                    BuiltInRegistries.ATTRIBUTE.getHolder(id).ifPresent(holder -> attributesToRemove.remove(holder.value()));
+                    net.minecraft.core.registries.BuiltInRegistries.ATTRIBUTE.get(id)
+                            .ifPresent(holder -> attributesToRemove.remove(holder.value()));
                 }
             }
 
-            for(net.minecraft.world.entity.ai.attributes.Attribute attribute : attributesToRemove)
-            {
-                net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder = BuiltInRegistries.ATTRIBUTE.wrapAsHolder(attribute);
+            for (net.minecraft.world.entity.ai.attributes.Attribute attribute : attributesToRemove) {
+                net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute> holder = BuiltInRegistries.ATTRIBUTE
+                        .wrapAsHolder(attribute);
                 AttributeInstance playerAttribute = player.getAttribute(holder);
-                if(playerAttribute != null)
-                {
-                    ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath("morph", "attr_" + BuiltInRegistries.ATTRIBUTE.getKey(attribute).getPath());
+                if (playerAttribute != null) {
+                    ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath("morph",
+                            "attr_" + BuiltInRegistries.ATTRIBUTE.getKey(attribute).getPath());
                     playerAttribute.removeModifier(modifierId);
                 }
             }
@@ -341,31 +314,26 @@ public class MorphInfoImpl extends MorphInfo
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void endMorphOnClient()
-    {
-        if(transitionState != null)
-        {
+    private void endMorphOnClient() {
+        if (transitionState != null) {
             transitionState = null;
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     @Override
-    protected float getAbilitySkinAlpha(float partialTick)
-    {
-        if(entityBiomassAbility != null)
-        {
+    protected float getAbilitySkinAlpha(float partialTick) {
+        if (entityBiomassAbility != null) {
             float alpha;
-            if(entityBiomassAbility.age < entityBiomassAbility.fadeTime)
-            {
-                alpha = EntityHelper.sineifyProgress(Mth.clamp((entityBiomassAbility.age + partialTick) / entityBiomassAbility.fadeTime, 0F, 1F));
-            }
-            else if(entityBiomassAbility.age >= entityBiomassAbility.fadeTime + entityBiomassAbility.solidTime)
-            {
-                alpha = EntityHelper.sineifyProgress(1F - Mth.clamp((entityBiomassAbility.age - (entityBiomassAbility.fadeTime + entityBiomassAbility.solidTime) + partialTick) / entityBiomassAbility.fadeTime, 0F, 1F));
-            }
-            else
-            {
+            if (entityBiomassAbility.age < entityBiomassAbility.fadeTime) {
+                alpha = EntityHelper.sineifyProgress(
+                        Mth.clamp((entityBiomassAbility.age + partialTick) / entityBiomassAbility.fadeTime, 0F, 1F));
+            } else if (entityBiomassAbility.age >= entityBiomassAbility.fadeTime + entityBiomassAbility.solidTime) {
+                alpha = EntityHelper.sineifyProgress(1F - Mth.clamp(
+                        (entityBiomassAbility.age - (entityBiomassAbility.fadeTime + entityBiomassAbility.solidTime)
+                                + partialTick) / entityBiomassAbility.fadeTime,
+                        0F, 1F));
+            } else {
                 alpha = 1F;
             }
             return alpha;
@@ -374,32 +342,29 @@ public class MorphInfoImpl extends MorphInfo
     }
 
     @Override
-    public void playStepSound(BlockPos pos, BlockState blockState)
-    {
-        ((EntityInvokerMixin)getActiveMorphEntityOrPlayer()).callPlayStepSound(pos, blockState);
+    public void playStepSound(BlockPos pos, BlockState blockState) {
+        ((EntityInvokerMixin) getActiveMorphEntityOrPlayer()).callPlayStepSound(pos, blockState);
     }
 
     @Override
-    public void playSwimSound()
-    {
-        ((EntityInvokerMixin)getActiveMorphEntityOrPlayer()).callPlaySwimSound(1.0F);
+    public void playSwimSound(float volume) {
+        ((EntityInvokerMixin) getActiveMorphEntityOrPlayer()).callPlaySwimSound(volume);
     }
 
     @Override
     public SoundEvent getHurtSound(DamageSource source) {
-        return ((LivingEntityInvokerMixin)getActiveMorphEntityOrPlayer())
+        return ((LivingEntityInvokerMixin) getActiveMorphEntityOrPlayer())
                 .callGetHurtSound(source);
     }
 
     @Override
     public SoundEvent getDeathSound() {
-        return ((LivingEntityInvokerMixin)getActiveMorphEntityOrPlayer())
+        return ((LivingEntityInvokerMixin) getActiveMorphEntityOrPlayer())
                 .callGetDeathSound();
     }
 
     @Override
-    public SoundEvent getFallSound(int height)
-    {
+    public SoundEvent getFallSound(int height) {
         // 1.21.1: Player no longer exposes getFallDamageSound
         // so for now we do not override fall sounds for morphs
         return null;
@@ -407,31 +372,32 @@ public class MorphInfoImpl extends MorphInfo
 
     @Override
     public SoundEvent getDrinkSound(ItemStack stack) {
-        return ((LivingEntityInvokerMixin)getActiveMorphEntityOrPlayer()).callGetDrinkingSound(stack);
+        // return
+        // ((LivingEntityInvokerMixin)getActiveMorphEntityOrPlayer()).callGetDrinkingSound(stack);
+        return null;
     }
 
     @Override
     public SoundEvent getEatSound(ItemStack stack) {
-        return getActiveMorphEntityOrPlayer().getEatingSound(stack);
+        // return getActiveMorphEntityOrPlayer().getEatingSound(stack);
+        return null;
     }
 
     @Override
-    public float getSoundVolume()
-    {
-        if(nextState != null)
-        {
-            if(prevState != null)
-            {
+    public float getSoundVolume() {
+        if (nextState != null) {
+            if (prevState != null) {
                 float transitionProg = getTransitionProgressLinear(1F);
 
-                float prevVolume = ((LivingEntityInvokerMixin)prevState.getEntityInstance(player.level(), player)).callGetSoundVolume();
-                float nextVolume = ((LivingEntityInvokerMixin)nextState.getEntityInstance(player.level(), player)).callGetSoundVolume();
+                float prevVolume = ((LivingEntityInvokerMixin) prevState.getEntityInstance(player.level(), player))
+                        .callGetSoundVolume();
+                float nextVolume = ((LivingEntityInvokerMixin) nextState.getEntityInstance(player.level(), player))
+                        .callGetSoundVolume();
 
                 return prevVolume + (nextVolume - prevVolume) * transitionProg;
-            }
-            else
-            {
-                return ((LivingEntityInvokerMixin)nextState.getEntityInstance(player.level(), player)).callGetSoundVolume();
+            } else {
+                return ((LivingEntityInvokerMixin) nextState.getEntityInstance(player.level(), player))
+                        .callGetSoundVolume();
             }
         }
 
@@ -439,22 +405,20 @@ public class MorphInfoImpl extends MorphInfo
     }
 
     @Override
-    public float getSoundPitch()
-    {
-        if(nextState != null)
-        {
-            if(prevState != null)
-            {
+    public float getSoundPitch() {
+        if (nextState != null) {
+            if (prevState != null) {
                 float transitionProg = getTransitionProgressLinear(1F);
 
-                float prevPitch = ((LivingEntityInvokerMixin)prevState.getEntityInstance(player.level(), player)).callGetVoicePitch();
-                float nextPitch = ((LivingEntityInvokerMixin)nextState.getEntityInstance(player.level(), player)).callGetVoicePitch();
+                float prevPitch = ((LivingEntityInvokerMixin) prevState.getEntityInstance(player.level(), player))
+                        .callGetVoicePitch();
+                float nextPitch = ((LivingEntityInvokerMixin) nextState.getEntityInstance(player.level(), player))
+                        .callGetVoicePitch();
 
                 return prevPitch + (nextPitch - prevPitch) * transitionProg;
-            }
-            else
-            {
-                return ((LivingEntityInvokerMixin)nextState.getEntityInstance(player.level(), player)).callGetVoicePitch();
+            } else {
+                return ((LivingEntityInvokerMixin) nextState.getEntityInstance(player.level(), player))
+                        .callGetVoicePitch();
             }
         }
 

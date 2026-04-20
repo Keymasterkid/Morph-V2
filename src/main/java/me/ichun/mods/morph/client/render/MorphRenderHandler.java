@@ -116,7 +116,7 @@ public class MorphRenderHandler
 
     private static void renderLiving(MorphState state, LivingEntity living, PoseStack stack, MultiBufferSource buffer, int light, float partialTick, boolean forceDuringInvisibility) //also captures the shadow size
     {
-        EntityRenderer<? super LivingEntity> livingRenderer = net.minecraft.client.Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(living);
+        EntityRenderer<?, ?> livingRenderer = net.minecraft.client.Minecraft.getInstance().getEntityRenderDispatcher().getRenderer(living);
         if(livingRenderer != null)
         {
             renderLiving(livingRenderer, living, stack, buffer, light, partialTick, forceDuringInvisibility);
@@ -131,7 +131,7 @@ public class MorphRenderHandler
         }
     }
 
-    public static void renderLiving(EntityRenderer<? super LivingEntity> renderer, LivingEntity living, PoseStack stack, MultiBufferSource buffer, int light, float partialTick, boolean forceDuringInvisibility)
+    public static void renderLiving(EntityRenderer<?, ?> renderer, LivingEntity living, PoseStack stack, MultiBufferSource buffer, int light, float partialTick, boolean forceDuringInvisibility)
     {
         boolean isInvisible = living.isInvisible();
         if(forceDuringInvisibility && isInvisible)
@@ -145,40 +145,16 @@ public class MorphRenderHandler
         }
     }
 
-    public static void renderLiving(EntityRenderer<? super LivingEntity> renderer, LivingEntity living, PoseStack stack, MultiBufferSource buffer, int light, float partialTick)
+    @SuppressWarnings("unchecked")
+    public static void renderLiving(EntityRenderer renderer, LivingEntity living, PoseStack stack, MultiBufferSource buffer, int light, float partialTick)
     {
         Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         if(living instanceof LocalPlayer)
         {
             LocalPlayer player = (LocalPlayer)living;
-            /*
-            if(mc.getConnection().getPlayerInfo(player.getGameProfile().getId()) == null) //we have to assign a NetworkPlayerInfo for the player skin to render.
-            {
-                // Stubbed for 1.21.1
-            }
-            */
         }
 
-        float yaw = Mth.lerp(partialTick, living.yRotO, living.getYRot());
-        stack.pushPose();
-        if(living instanceof EnderDragon)
-        {
-            stack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180F));
-        }
-        renderer.render(living, yaw, partialTick, stack, buffer, light);
-        stack.popPose();
-
-        if(living instanceof LocalPlayer)
-        {
-            LocalPlayer player = (LocalPlayer)living;
-            /*
-            PlayerInfo playerInfo = mc.getConnection().getPlayerInfo(player.getGameProfile().getId());
-            if(playerInfo != null && playerInfo.getResponseTime() == -100 && playerInfo.getGameType() == GameType.ADVENTURE) //we've spoofed, remove it now
-            {
-                // mc.getConnection().playerInfoMap.remove(player.getGameProfile().getId());
-            }
-            */
-        }
+        renderer.render(renderer.createRenderState(living, partialTick), stack, buffer, light);
     }
 
     public static void renderTransitionState(Player player, MorphInfoImpl info, PoseStack stack, MultiBufferSource buffer, int light, int overlay, float partialTick, float transitionProgress, float skinAlpha)
@@ -221,6 +197,13 @@ public class MorphRenderHandler
         }
 
         changedShadowSize = true;
+    }
+
+    public static PoseStack.Pose createPose(org.joml.Matrix4f p, org.joml.Matrix3f n) {
+        PoseStack.Pose pose = new PoseStack.Pose();
+        pose.pose().set(p);
+        pose.normal().set(n);
+        return pose;
     }
 
     public static class MorphTransitionState
@@ -306,12 +289,12 @@ public class MorphRenderHandler
 
                 stack.pushPose();
                 stack.translate(0F, prevLivingInstance.getDimensions(net.minecraft.world.entity.Pose.STANDING).height() / 2F, 0F);
-                PoseStack.Pose prevMid = me.ichun.mods.morph.mixin.PoseAccessor.create(new org.joml.Matrix4f(stack.last().pose()), new org.joml.Matrix3f(stack.last().normal()));
+                PoseStack.Pose prevMid = MorphRenderHandler.createPose(new org.joml.Matrix4f(stack.last().pose()), new org.joml.Matrix3f(stack.last().normal()));
                 stack.popPose();
 
                 stack.pushPose();
                 stack.translate(0F, nextLivingInstance.getDimensions(net.minecraft.world.entity.Pose.STANDING).height() / 2F, 0F);
-                PoseStack.Pose nextMid = me.ichun.mods.morph.mixin.PoseAccessor.create(new org.joml.Matrix4f(stack.last().pose()), new org.joml.Matrix3f(stack.last().normal()));
+                PoseStack.Pose nextMid = MorphRenderHandler.createPose(new org.joml.Matrix4f(stack.last().pose()), new org.joml.Matrix3f(stack.last().normal()));
                 stack.popPose();
 
                 ModelPartCapture transitionCapture = new ModelPartCapture();
@@ -347,67 +330,39 @@ public class MorphRenderHandler
 
         public ArrayList<CaptureInfo> combineTowards(PoseStack.Pose prevMid, PoseStack.Pose nextMid, ModelPartCapture other, float transitionProgress)
         {
-            ArrayList<CaptureInfo> transitionInfos = new ArrayList<>();
-            int size = Math.max(infos.size(), other.infos.size());
-            
-            org.joml.Matrix4f invPrevMidPose = new org.joml.Matrix4f(prevMid.pose()).invert();
-            org.joml.Matrix4f invNextMidPose = new org.joml.Matrix4f(nextMid.pose()).invert();
-            
-            PoseStack.Pose lerpMid = lerpPose(prevMid, nextMid, transitionProgress);
+            ArrayList<CaptureInfo> prevInfo = infos;
+            ArrayList<CaptureInfo> nextInfo = other.infos;
 
-            for(int i = 0; i < size; i++)
+            //Fill with empty parts first
+            while(prevInfo.size() < nextInfo.size())
             {
-                CaptureInfo prev = i < infos.size() ? infos.get(i) : null;
-                CaptureInfo next = i < other.infos.size() ? other.infos.get(i) : null;
-
-                if(prev != null && next != null)
-                {
-                    org.joml.Matrix4f prevLocalPose = new org.joml.Matrix4f(invPrevMidPose).mul(prev.e.pose());
-                    org.joml.Matrix4f nextLocalPose = new org.joml.Matrix4f(invNextMidPose).mul(next.e.pose());
-                    
-                    PoseStack.Pose lerpedLocal = lerpPose(prevLocalPose, nextLocalPose, transitionProgress);
-                    
-                    org.joml.Matrix4f finalPose = new org.joml.Matrix4f(lerpMid.pose()).mul(lerpedLocal.pose());
-                    org.joml.Matrix3f finalNormal = new org.joml.Matrix3f(lerpMid.normal()).mul(lerpedLocal.normal());
-                    
-                    Project.Part interim = ModelHelper.createInterimPart(prev.modelPart.part, next.modelPart.part, transitionProgress);
-                    transitionInfos.add(new CaptureInfo(me.ichun.mods.morph.mixin.PoseAccessor.create(finalPose, finalNormal), new CaptureInfo.ModelPart(interim)));
-                }
-                else if(prev != null)
-                {
-                    transitionInfos.add(new CaptureInfo(prev.e, prev.modelPart));
-                }
-                else if(next != null)
-                {
-                    transitionInfos.add(new CaptureInfo(next.e, next.modelPart));
-                }
+                Project.Part part = new Project.Part(null, 0);
+                part.boxes.clear();
+                prevInfo.add(new CaptureInfo(prevMid, new CaptureInfo.ModelPart(part)));
             }
+
+            while(nextInfo.size() < prevInfo.size())
+            {
+                Project.Part part = new Project.Part(null, 0);
+                part.boxes.clear();
+                nextInfo.add(new CaptureInfo(nextMid, new CaptureInfo.ModelPart(part)));
+            }
+
+            ArrayList<CaptureInfo> transitionInfos = new ArrayList<>();
+
+            //sync up the box count
+            for(int i = 0; i < prevInfo.size(); i++)
+            {
+                Project.Part oldPart = prevInfo.get(i).modelPart.part;
+                Project.Part newPart = nextInfo.get(i).modelPart.part;
+
+                ModelHelper.matchBoxesCount(oldPart, newPart);
+                ModelHelper.matchBoxesCount(newPart, oldPart);
+
+                transitionInfos.add(new CaptureInfo(RenderHelper.createInterimStackEntry(prevInfo.get(i).e, nextInfo.get(i).e, transitionProgress), new CaptureInfo.ModelPart(ModelHelper.createInterimPart(oldPart, newPart, transitionProgress))));
+            }
+
             return transitionInfos;
-        }
-
-        private PoseStack.Pose lerpPose(PoseStack.Pose a, PoseStack.Pose b, float t)
-        {
-            return lerpPose(a.pose(), b.pose(), t);
-        }
-
-        private PoseStack.Pose lerpPose(org.joml.Matrix4f matA, org.joml.Matrix4f matB, float t)
-        {
-            org.joml.Vector3f transA = matA.getTranslation(new org.joml.Vector3f());
-            org.joml.Vector3f transB = matB.getTranslation(new org.joml.Vector3f());
-            org.joml.Vector3f trans = transA.lerp(transB, t);
-
-            org.joml.Quaternionf quatA = matA.getUnnormalizedRotation(new org.joml.Quaternionf());
-            org.joml.Quaternionf quatB = matB.getUnnormalizedRotation(new org.joml.Quaternionf());
-            org.joml.Quaternionf quat = quatA.slerp(quatB, t);
-
-            org.joml.Vector3f scaleA = matA.getScale(new org.joml.Vector3f());
-            org.joml.Vector3f scaleB = matB.getScale(new org.joml.Vector3f());
-            org.joml.Vector3f scale = scaleA.lerp(scaleB, t);
-
-            org.joml.Matrix4f resPose = new org.joml.Matrix4f().translationRotateScale(trans, quat, scale);
-            org.joml.Matrix3f resNormal = new org.joml.Matrix3f(resPose).invert().transpose();
-            
-            return me.ichun.mods.morph.mixin.PoseAccessor.create(resPose, resNormal);
         }
 
         public void render(PoseStack stack, MultiBufferSource buffer, int light, int overlay, float skinAlpha)
@@ -428,6 +383,7 @@ public class MorphRenderHandler
         public void render(PoseStack stack, VertexConsumer vertexBuilder, int light, int overlay, float red, float green, float blue, float alpha)
         {
             PoseStack newStack = stack != null ? stack : new PoseStack();
+            int color = net.minecraft.util.ARGB.color((int)(alpha * 255F), (int)(red * 255F), (int)(green * 255F), (int)(blue * 255F));
             for(CaptureInfo info : infos)
             {
                 newStack.pushPose();
@@ -437,7 +393,7 @@ public class MorphRenderHandler
                 entLast.pose().mul(correctorLast.pose());
                 entLast.normal().mul(correctorLast.normal());
 
-                info.createAndRender(newStack, vertexBuilder, light, overlay, red, green, blue, alpha);
+                info.createAndRender(newStack, vertexBuilder, light, overlay, color);
                 newStack.popPose();
             }
         }
@@ -449,18 +405,18 @@ public class MorphRenderHandler
         public final CaptureInfo.ModelPart modelPart;
 
         public CaptureInfo(PoseStack.Pose e, CaptureInfo.ModelPart modelPart) {
-            this.e = me.ichun.mods.morph.mixin.PoseAccessor.create(new org.joml.Matrix4f(e.pose()), new org.joml.Matrix3f(e.normal()));
+            this.e = MorphRenderHandler.createPose(new org.joml.Matrix4f(e.pose()), new org.joml.Matrix3f(e.normal()));
             this.modelPart = modelPart;
         }
 
-        public void createAndRender(PoseStack stack, VertexConsumer buffer, int light, int overlay, float red, float green, float blue, float alpha)
+        public void createAndRender(PoseStack stack, VertexConsumer buffer, int light, int overlay, int color)
         {
             if(this.modelPart.model == null)
             {
                 this.modelPart.model = ModelHelper.createModelPart(this.modelPart.part);
             }
 
-            this.modelPart.model.render(stack, buffer, light, overlay, red, green, blue, alpha);
+            this.modelPart.model.render(stack, buffer, light, overlay, color);
         }
 
         private static class ModelPart

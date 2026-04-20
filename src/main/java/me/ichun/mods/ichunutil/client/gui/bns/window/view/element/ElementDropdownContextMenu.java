@@ -43,9 +43,6 @@ public class ElementDropdownContextMenu<T extends ElementDropdownContextMenu> ex
             RenderHelper.drawColour(guiGraphics, -6250336, 255, getLeft(), getTop(), width - ElementNumberInput.BUTTON_WIDTH, height, 0);
             RenderHelper.drawColour(guiGraphics, -16777216, 255, getLeft() + 1, getTop() + 1, width - 2 - ElementNumberInput.BUTTON_WIDTH, height - 2, 0);
 
-            RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-            RenderSystem.enableBlend();
-
             renderMinecraftStyleButton(guiGraphics, getRight() - ElementNumberInput.BUTTON_WIDTH, getTop(), ElementNumberInput.BUTTON_WIDTH, (int)(height), disabled || parentFragment.isDragging() && parentFragment.getFocused() == this ? ButtonState.CLICK : hover ? ButtonState.HOVER : ButtonState.IDLE, renderMinecraftStyle());
 
             bindTexture(resourceStatsIcon());
@@ -71,11 +68,11 @@ public class ElementDropdownContextMenu<T extends ElementDropdownContextMenu> ex
                 colour = getTheme().elementInputBorder;
             }
             RenderHelper.drawColour(guiGraphics, colour[0], colour[1], colour[2], 255, getRight() - ElementNumberInput.BUTTON_WIDTH, getTop(), ElementNumberInput.BUTTON_WIDTH, height, 0);
-            guiGraphics.pose().pushPose();
+            guiGraphics.pose().pushMatrix();
             float scale = 0.5F;
-            guiGraphics.pose().scale(scale, scale, scale);
+            guiGraphics.pose().scale(scale, scale);
             drawString(guiGraphics, "\u25BC", (getRight() - ElementNumberInput.BUTTON_WIDTH + 4) / scale, (getTop() + 2.5F + (float)((height / 2d) - net.minecraft.client.Minecraft.getInstance().font.lineHeight / 2d)) / scale);
-            guiGraphics.pose().popPose();
+            guiGraphics.pose().popMatrix();
         }
         if(!text.isEmpty())
         {

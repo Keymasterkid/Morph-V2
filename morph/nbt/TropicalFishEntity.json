@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.fish.TropicalFishEntity",
+  "forClass": "net.minecraft.world.entity.animal.TropicalFish",
   "modifiers": [
     {
       "key": "Variant",

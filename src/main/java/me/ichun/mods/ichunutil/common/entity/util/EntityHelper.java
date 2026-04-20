@@ -80,7 +80,7 @@ public class EntityHelper
     {
         // Persistent data in NeoForge 1.21.1 is handled via Custom Data Attachments if needed, 
         // but Forge's getPersistentData() generally maps to a CompoundTag on the player.
-        CompoundTag persistedTag = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+        CompoundTag persistedTag = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG).orElseGet(CompoundTag::new);
         if(!player.getPersistentData().contains(Player.PERSISTED_NBT_TAG))
         {
             player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persistedTag);
@@ -90,7 +90,7 @@ public class EntityHelper
         {
             return persistedTag;
         }
-        CompoundTag specificTag = persistedTag.getCompound(name);
+        CompoundTag specificTag = persistedTag.getCompound(name).orElseGet(CompoundTag::new);
         if(!persistedTag.contains(name))
         {
             persistedTag.put(name, specificTag);

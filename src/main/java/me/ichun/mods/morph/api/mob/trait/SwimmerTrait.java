@@ -1,10 +1,6 @@
 package me.ichun.mods.morph.api.mob.trait;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
-import java.util.Random;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -15,6 +11,7 @@ import net.minecraft.world.level.biome.Biomes;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.common.NeoForgeMod;
 import net.minecraft.resources.ResourceLocation;
+import java.util.Random;
 import java.util.UUID;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.api.distmarker.Dist;
@@ -73,7 +70,7 @@ public class SwimmerTrait extends Trait<SwimmerTrait>
 
         if(swimMultiplier != 0F)
         {
-            if(player.isInWaterOrBubble())
+            if(player.isInWater())
             {
                 setSwimAttribute(1F + ((swimMultiplier - 1F) * strength));
             }
@@ -81,7 +78,7 @@ public class SwimmerTrait extends Trait<SwimmerTrait>
 
         if(landMultiplier != 0F)
         {
-            if(!player.isInWaterOrBubble() && player.onGround())
+            if(!player.isInWater() && player.onGround())
             {
                 multiplyMotion(1F + ((landMultiplier - 1F) * strength));
             }
@@ -96,7 +93,7 @@ public class SwimmerTrait extends Trait<SwimmerTrait>
         float swimMul = Mth.lerp(transitionProgress, prevTrait.swimMultiplier, swimMultiplier);
         if(swimMul != 0F)
         {
-            if(player.isInWaterOrBubble())
+            if(player.isInWater())
             {
                 setSwimAttribute(swimMul);
             }
@@ -105,7 +102,7 @@ public class SwimmerTrait extends Trait<SwimmerTrait>
         float landMul = Mth.lerp(transitionProgress, prevTrait.landMultiplier, landMultiplier);
         if(landMul != 0F)
         {
-            if(!player.isInWaterOrBubble() && player.onGround())
+            if(!player.isInWater() && player.onGround())
             {
                 multiplyMotion(landMul);
             }
@@ -198,24 +195,13 @@ public class SwimmerTrait extends Trait<SwimmerTrait>
             }
             else if(landMultiplier < 1F && !inLava) //if there is a <1 land multiplier and you are on land
             {
-                float farPlaneDistance = event.getMode() == FogRenderer.FogMode.FOG_SKY ? event.getFarPlaneDistance() : Math.max(event.getFarPlaneDistance() - 16.0F, 32.0F);
+                float farPlaneDistance = Math.max(event.getFarPlaneDistance() - 16.0F, 32.0F);
                 float f1 = Mth.lerp(lastStrength, farPlaneDistance, 5.0F);
-                float f2;
-                float f3;
-                if (event.getMode() == FogRenderer.FogMode.FOG_SKY) {
-                    f2 = 0.0F;
-                    f3 = f1 * 0.8F;
-                } else {
-                    f2 = f1 * 0.25F;
-                    f3 = f1;
-                }
-
-                // RenderSystem hooks are restricted in 1.21.1, using event methods where possible
-                // NeoClientHooks.onFogRender(event.getType(), event.getCamera(), (float)event.getRenderPartialTicks(), f3);
+                float f2 = f1 * 0.25F;
+                float f3 = f1;
 
                 event.setFarPlaneDistance(f3);
                 event.setNearPlaneDistance(f2);
-                event.setCanceled(true);
             }
         }
     }

@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.TameableEntity",
+  "forClass": "net.minecraft.world.entity.TamableAnimal",
   "modifiers": [
     {
       "key": "Owner",

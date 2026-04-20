@@ -123,7 +123,7 @@ public class EventHandlerServer
     {
         if(!event.getLevel().isClientSide() && event.getLevel() instanceof ServerLevel serverLevel && serverLevel.dimension().equals(net.minecraft.world.level.Level.OVERWORLD))
         {
-            MorphHandler.INSTANCE.setSaveData(serverLevel.getDataStorage().computeIfAbsent(new net.minecraft.world.level.saveddata.SavedData.Factory<>(MorphSavedData::new, MorphSavedData::load, null), MorphSavedData.ID));
+            MorphHandler.INSTANCE.setSaveData(serverLevel.getDataStorage().computeIfAbsent(MorphSavedData.TYPE));
         }
     }
 

@@ -14,6 +14,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 // // Capability system removed in 1.21 - use Data Attachments
@@ -243,7 +245,7 @@ public abstract class MorphInfo
 
         if(tag.contains("prevState"))
         {
-            MorphState state = MorphState.createFromNbt(tag.getCompound("prevState"));
+            MorphState state = MorphState.createFromNbt(tag.getCompound("prevState").orElse(new net.minecraft.nbt.CompoundTag()));
             state.traits = MorphApi.getApiImpl().getTraitsForVariant(state.variant, player);
             if(state.variant.thisVariant != null)
             {
@@ -264,7 +266,7 @@ public abstract class MorphInfo
 
         if(tag.contains("nextState"))
         {
-            MorphState state = MorphState.createFromNbt(tag.getCompound("nextState"));
+            MorphState state = MorphState.createFromNbt(tag.getCompound("nextState").orElse(new net.minecraft.nbt.CompoundTag()));
             state.traits = MorphApi.getApiImpl().getTraitsForVariant(state.variant, player);
             setNextState(state);
             if(nextState.variant.thisVariant == null) //MorphState variants should ALWAYS have a thisVariant.
@@ -278,11 +280,21 @@ public abstract class MorphInfo
             setNextState(null);
         }
 
-        morphTime = tag.getInt("morphTime");
-        morphingTime = tag.getInt("morphingTime");
+        morphTime = tag.getInt("morphTime").orElse(0);
+        morphingTime = tag.getInt("morphingTime").orElse(0);
         firstTick = true; //ensure attribute modifiers are applied on first tick after load
 
         player.refreshDimensions();
+    }
+
+    public void write(ValueOutput output)
+    {
+        output.store("data", CompoundTag.CODEC, write(new CompoundTag()));
+    }
+
+    public void read(ValueInput input)
+    {
+        read(input.read("data", CompoundTag.CODEC).orElse(new CompoundTag()));
     }
 
     public LivingEntity getActiveMorphEntity()
@@ -370,7 +382,7 @@ public abstract class MorphInfo
     //Entity sound functions
     public abstract void playStepSound(BlockPos pos, BlockState blockState);
 
-    public abstract void playSwimSound();
+    public abstract void playSwimSound(float volume);
 
     //Living Entity sound functions
     @Nullable

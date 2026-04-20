@@ -31,8 +31,7 @@ public class ElementToggle<T extends ElementToggle> extends ElementClickable<T>
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        RenderSystem.enableBlend();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        // RenderSystem.enableBlend();
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         if(renderMinecraftStyle() > 0)

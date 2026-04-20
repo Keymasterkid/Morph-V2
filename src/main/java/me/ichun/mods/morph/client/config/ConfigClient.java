@@ -1,5 +1,5 @@
 package me.ichun.mods.morph.client.config;
-import me.ichun.mods.morph.client.render.InteractionHandHandler;
+import me.ichun.mods.morph.client.render.hand.HandHandler;
 
 import me.ichun.mods.ichunutil.client.gui.bns.window.WindowPopup;
 import me.ichun.mods.ichunutil.client.gui.bns.window.constraint.Constraint;
@@ -122,7 +122,7 @@ public class ConfigClient extends ConfigBase
     @Override
     public void onConfigLoaded()
     {
-        InteractionHandHandler.setState(morphAllowHandOverride);
+        HandHandler.setState(morphAllowHandOverride);
     }
 
     @Nonnull

@@ -56,8 +56,8 @@ public class ElementRenderEntity extends Element<Fragment>
              guiGraphics.renderOutline(getLeft() - 1, getTop() - 1, width + 2, height + 2, 0xFF000000 | (getTheme().elementTreeBorder[0] << 16) | (getTheme().elementTreeBorder[1] << 8) | getTheme().elementTreeBorder[2]);
         }
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        // RenderSystem.enableBlend();
+        // RenderSystem.defaultBlendFunc();
 
         fill(guiGraphics, new int[]{0, 0, 0}, 255, 0);
 
@@ -71,7 +71,8 @@ public class ElementRenderEntity extends Element<Fragment>
 
     private void renderEntity(GuiGraphics guiGraphics, double x, double y, float scale)
     {
-        InventoryScreen.renderEntityInInventory(guiGraphics, (float)x, (float)y, scale, new Vector3f(), ENTITY_ROTATION, new Quaternionf(), entToRender);
+        int ix = (int)x, iy = (int)y, iscale = (int)scale;
+        InventoryScreen.renderEntityInInventory(guiGraphics, ix - iscale, iy - iscale, ix + iscale, iy + iscale, (float)iscale, new Vector3f(), ENTITY_ROTATION, new Quaternionf(), entToRender);
     }
 
     @Override

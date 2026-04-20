@@ -3,7 +3,6 @@
   "minVersion": "0.8",
   "package": "me.ichun.mods.morph.mixin",
   "compatibilityLevel": "JAVA_21",
-  "refmap": "morph.refmap.json",
   "mixins": [
     "AbstractHorseEntityInvokerMixin",
     "EntityInvokerMixin",
@@ -11,10 +10,10 @@
     "LivingEntityInvokerMixin",
     "LivingEntityMixin",
     "IronGolemAccessor",
+    "InventoryAccessor",
     "LlamaEntityInvokerMixin",
     "ModelPartAccessor",
     "PlayerEntityMixin",
-    "PoseAccessor",
     "WalkAnimationStateAccessor"
   ],
   "client": [

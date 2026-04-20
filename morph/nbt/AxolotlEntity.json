@@ -1,0 +1,9 @@
+{
+  "forClass": "net.minecraft.world.entity.animal.axolotl.Axolotl",
+  "modifiers": [
+    {
+      "key": "Variant",
+      "keep": true
+    }
+  ]
+}

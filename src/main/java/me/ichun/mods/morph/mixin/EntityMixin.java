@@ -53,7 +53,7 @@ public abstract class EntityMixin
             MorphInfo info = MorphHandler.INSTANCE.getMorphInfo((Player)(Object)this);
             if(info != null && info.isMorphed())
             {
-                info.playSwimSound();
+                info.playSwimSound(volume);
                 ci.cancel();
             }
         }

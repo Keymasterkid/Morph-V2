@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.CatEntity",
+  "forClass": "net.minecraft.world.entity.animal.Cat",
   "modifiers": [
     {
       "key": "CatType",

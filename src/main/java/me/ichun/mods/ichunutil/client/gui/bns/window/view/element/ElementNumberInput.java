@@ -104,8 +104,8 @@ public class ElementNumberInput extends ElementTextField
         {
             widget.setBordered(true);
             widget.render(guiGraphics, mouseX, mouseY, partialTick);
-            RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-            RenderSystem.enableBlend();
+
+            // RenderSystem.enableBlend();
 
             renderMinecraftStyleButton(guiGraphics, getRight() - BUTTON_WIDTH, getTop(), BUTTON_WIDTH, (int)(height / 2d), clickUp ? ButtonState.CLICK : (isMouseBetween(mouseX, getRight() - BUTTON_WIDTH, getRight()) && isMouseBetween(mouseY, getTop(), getTop() + (height / 2D))) ? ButtonState.HOVER : ButtonState.IDLE, renderMinecraftStyle()); //top half
             renderMinecraftStyleButton(guiGraphics, getRight() - BUTTON_WIDTH, getTop() + (int)(height / 2d), BUTTON_WIDTH, (int)(height / 2d), clickDown ? ButtonState.CLICK : (isMouseBetween(mouseX, getRight() - BUTTON_WIDTH, getRight()) && isMouseBetween(mouseY, getTop() + (height / 2D), getBottom())) ? ButtonState.HOVER : ButtonState.IDLE, renderMinecraftStyle()); //top half
@@ -130,7 +130,6 @@ public class ElementNumberInput extends ElementTextField
             fill(guiGraphics, colour, 1);
             widget.setBordered(false);
             widget.render(guiGraphics, mouseX, mouseY, partialTick);
-            RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
 
             //handle top half
             if(clickUp)
@@ -162,12 +161,12 @@ public class ElementNumberInput extends ElementTextField
                 colour = getTheme().elementInputBorder;
             }
             RenderHelper.drawColour(guiGraphics, colour[0], colour[1], colour[2], 255, getRight() - BUTTON_WIDTH, getTop() + (height / 2d), BUTTON_WIDTH, (height / 2d), 0); //bottom half
-            guiGraphics.pose().pushPose();
+            guiGraphics.pose().pushMatrix();
             float scale = 0.5F;
-            guiGraphics.pose().scale(scale, scale, scale);
+            guiGraphics.pose().scale(scale, scale);
             drawString(guiGraphics, "\u25B2", (getRight() - BUTTON_WIDTH + 4) / scale, (getTop() + 2.5F + (float)(((height / 2d) / 2) - net.minecraft.client.Minecraft.getInstance().font.lineHeight / 2d)) / scale);
             drawString(guiGraphics, "\u25BC", (getRight() - BUTTON_WIDTH + 4) / scale, (getTop() + 2.5F + (float)((((height - 0.5D) / 2d) / 2 * 3) - net.minecraft.client.Minecraft.getInstance().font.lineHeight / 2d)) / scale);
-            guiGraphics.pose().popPose();
+            guiGraphics.pose().popMatrix();
         }
     }
 

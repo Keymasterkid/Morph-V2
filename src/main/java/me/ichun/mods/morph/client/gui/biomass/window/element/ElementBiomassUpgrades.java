@@ -126,13 +126,13 @@ public class ElementBiomassUpgrades extends ElementFertile<WindowBiomassUpgrades
             // RenderHelper.drawColour stubbed
         }
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        // RenderSystem.enableBlend();
+        // RenderSystem.defaultBlendFunc();
 
 //        RenderHelper.drawColour(stack, 0, 0, 0, 255, getLeft(), getTop(), width, height, -100);
         // RenderHelper.drawColour(stack, 43, 43, 43, 255, getLeft(), getTop(), width, height, -100); //TODO should the z-index be -100?
 
-        setScissor();
+        setScissor(guiGraphics);
         children.forEach(item -> {
             if(item instanceof ElementRipple)
             {
@@ -153,9 +153,9 @@ public class ElementBiomassUpgrades extends ElementFertile<WindowBiomassUpgrades
                 ((ElementUpgradeNode)item).render(guiGraphics, mouseX, mouseY, partialTick);
             }
         });
-        resetScissorToParent();
+        resetScissorToParent(guiGraphics);
 
-        RenderSystem.disableBlend();
+        // RenderSystem.disableBlend();
     }
 
     @Override

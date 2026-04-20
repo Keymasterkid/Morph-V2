@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.item.ArmorStandEntity",
+  "forClass": "net.minecraft.world.entity.decoration.ArmorStand",
   "modifiers": [
     {
       "key": "Invisible",

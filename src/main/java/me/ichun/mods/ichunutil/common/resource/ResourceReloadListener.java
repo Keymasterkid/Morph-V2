@@ -3,23 +3,28 @@ package me.ichun.mods.ichunutil.common.resource;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.mojang.serialization.Codec;
 import me.ichun.mods.ichunutil.common.iChunUtil;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ResourceReloadListener<T> extends SimpleJsonResourceReloadListener
+import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
+import net.minecraft.util.GsonHelper;
+
+public class ResourceReloadListener<T> extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>>
 {
     private static final Gson DEFAULT_GSON = (new GsonBuilder()).setPrettyPrinting().disableHtmlEscaping().create();
 
     private final Class<T> classType;
+    private final String folder;
 
     private final Gson parser;
     private T defaultObj = null;
@@ -32,8 +37,7 @@ public class ResourceReloadListener<T> extends SimpleJsonResourceReloadListener
 
     public ResourceReloadListener(Gson gsonParser, String resourceFolder, Class<T> classType)
     {
-        super(gsonParser, resourceFolder);
-
+        this.folder = resourceFolder;
         this.classType = classType;
         this.parser = gsonParser;
 
@@ -44,6 +48,25 @@ public class ResourceReloadListener<T> extends SimpleJsonResourceReloadListener
     {
         this.defaultObj = defaultObj;
         return (K)this;
+    }
+
+    @Override
+    protected Map<ResourceLocation, JsonElement> prepare(ResourceManager resourceManager, ProfilerFiller profiler) {
+        Map<ResourceLocation, JsonElement> map = new HashMap<>();
+        for (ResourceLocation resourcelocation : resourceManager.listResources(this.folder, (p_223405_) -> p_223405_.getPath().endsWith(".json")).keySet()) {
+            try {
+                try (java.io.InputStream inputstream = resourceManager.open(resourcelocation);
+                     java.io.Reader reader = new java.io.InputStreamReader(inputstream, java.nio.charset.StandardCharsets.UTF_8)) {
+                    JsonElement jsonelement = GsonHelper.fromJson(this.parser, reader, JsonElement.class);
+                    if (jsonelement != null) {
+                        map.put(resourcelocation, jsonelement);
+                    }
+                }
+            } catch (Exception exception) {
+                iChunUtil.LOGGER.error("Couldn't parse data file {} from {}", resourcelocation, resourcelocation, exception);
+            }
+        }
+        return map;
     }
 
     @Override
@@ -66,8 +89,8 @@ public class ResourceReloadListener<T> extends SimpleJsonResourceReloadListener
         return objects.containsKey(key) ? objects.get(key) : defaultObj;
     }
 
-    private void onAddReloadListener(AddReloadListenerEvent event)
+    private void onAddReloadListener(AddClientReloadListenersEvent event)
     {
-        event.addListener(this);
+        event.addListener(ResourceLocation.fromNamespaceAndPath("ichunutil", folder), this);
     }
 }

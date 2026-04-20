@@ -29,8 +29,7 @@ public class ElementTexture extends Element
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        RenderSystem.enableBlend();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
         bindTexture(textureLocation);
 
         if(warping)

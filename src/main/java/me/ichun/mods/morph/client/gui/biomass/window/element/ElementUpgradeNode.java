@@ -27,14 +27,8 @@ import java.util.function.Consumer;
 
 public class ElementUpgradeNode extends ElementToggleTextured<ElementUpgradeNode>
 {
-    // Updated RenderType for 1.21.1
-    public static final RenderType MORPH_LINES = RenderType.create("morph_lines", DefaultVertexFormat.POSITION_COLOR, com.mojang.blaze3d.vertex.VertexFormat.Mode.LINES, 256, false, false, 
-        RenderType.CompositeState.builder()
-            .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(4.0D)))
-            .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
-            .setWriteMaskState(RenderStateShard.COLOR_DEPTH_WRITE)
-            .setShaderState(RenderType.POSITION_COLOR_SHADER)
-            .createCompositeState(false));
+    // Use built-in lines render type (custom RenderType with removed state shards replaced)
+    public static final RenderType MORPH_LINES = RenderType.lines();
 
     public static int SIZE = 16;
     public static int TOLERANCE_MIN = 2 * SIZE;
@@ -176,7 +170,8 @@ public class ElementUpgradeNode extends ElementToggleTextured<ElementUpgradeNode
             {
                 net.minecraft.client.renderer.MultiBufferSource.BufferSource bufferSource = net.minecraft.client.Minecraft.getInstance().renderBuffers().bufferSource();
                 VertexConsumer builder = bufferSource.getBuffer(MORPH_LINES);
-                Matrix4f matrix = guiGraphics.pose().last().pose();
+                org.joml.Matrix3x2fStack _m2d = guiGraphics.pose();
+org.joml.Matrix4f matrix = new org.joml.Matrix4f(_m2d.m00(), _m2d.m01(), 0, 0, _m2d.m10(), _m2d.m11(), 0, 0, 0, 0, 1, 0, _m2d.m20(), _m2d.m21(), 0, 1);
                 float parX = parentNode.getLeft() + parentNode.width / 2F;
                 float parY = parentNode.getTop() + parentNode.height / 2F;
                 float diffX = (getLeft() + width / 2F) - parX;

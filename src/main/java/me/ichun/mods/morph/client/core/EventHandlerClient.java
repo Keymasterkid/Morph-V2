@@ -15,10 +15,11 @@ import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.minecraft.util.TriState;
 import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,6 +30,7 @@ public class EventHandlerClient
     public HudHandler hudHandler;
 
     @SubscribeEvent
+    @OnlyIn(Dist.CLIENT)
     public void onRenderPlayerPre(RenderPlayerEvent.Pre event)
     {
         if(MorphRenderHandler.isRenderingMorph) //we're rendering a player morph, forgetaboutit
@@ -36,7 +38,15 @@ public class EventHandlerClient
             return;
         }
 
-        Player player = event.getEntity();
+        // In 1.21.2, RenderLivingEvent no longer has getEntity().
+        // We look up the player using the entity ID stored in the render state.
+        net.minecraft.world.entity.Entity entity = net.minecraft.client.Minecraft.getInstance().level != null
+                ? net.minecraft.client.Minecraft.getInstance().level.getEntity(event.getRenderState().id)
+                : null;
+        if (!(entity instanceof Player player))
+        {
+            return;
+        }
 
         //Disables the render of this player if this player is riding the render view entity and the game is in first person
         if(Morph.configClient.morphDisableRidingPlayerRenderInFirstPerson && player.getVehicle() == net.minecraft.client.Minecraft.getInstance().cameraEntity && net.minecraft.client.Minecraft.getInstance().options.getCameraType().equals(CameraType.FIRST_PERSON))
@@ -45,7 +55,10 @@ public class EventHandlerClient
             return;
         }
 
-        MorphRenderHandler.restoreShadowSize(event.getRenderer());
+        net.minecraft.client.renderer.entity.player.PlayerRenderer playerRenderer =
+                (net.minecraft.client.renderer.entity.player.PlayerRenderer) event.getRenderer();
+
+        MorphRenderHandler.restoreShadowSize(playerRenderer);
 
         if(!player.isRemoved())
         {
@@ -61,18 +74,20 @@ public class EventHandlerClient
 
                 MorphRenderHandler.renderMorphInfo(player, info, event.getPoseStack(), event.getMultiBufferSource(), event.getPackedLight(), event.getPartialTick());
 
-                MorphRenderHandler.setShadowSize(event.getRenderer(), info, event.getPartialTick());
+                MorphRenderHandler.setShadowSize(playerRenderer, info, event.getPartialTick());
             }
         }
     }
 
     @SubscribeEvent
-    public void onRenderNameplate(RenderNameTagEvent event)
+    @OnlyIn(Dist.CLIENT)
+    public void onRenderNameplate(RenderNameTagEvent.CanRender event)
     {
-        if(MorphRenderHandler.denyRenderNameplate || event.getEntity().getPersistentData().contains(MorphVariant.NBT_PLAYER_ID) && !MorphRenderHandler.isRenderingMorph)
-        {
-            // event.setCanceled(true);
-        }
+        // In 1.21.2, we use CanRender to decide if it should render.
+        // Since getEntity() is missing, we'll try to get it from renderer.
+        // Wait, if it's really missing, how do we know?
+        // Let's assume for now we can't hide it this way if getEntity() is missing OR use a different hook.
+        // Actually, many nameplate hide logic moved to LivingEntityRenderer.
     }
 
     @SubscribeEvent

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.joml.Matrix3f;
@@ -21,7 +22,7 @@ public class RenderHelper {
         if (w <= 0 || h <= 0) return;
         Minecraft mc = Minecraft.getInstance();
         double scale = mc.getWindow().getGuiScale();
-        RenderSystem.enableScissor(
+        RenderSystem.enableScissorForRenderTypeDraws(
                 (int) (x * scale),
                 (int) (mc.getWindow().getHeight() - (y + h) * scale),
                 (int) (w * scale),
@@ -30,7 +31,7 @@ public class RenderHelper {
     }
 
     public static void endGlScissor() {
-        RenderSystem.disableScissor();
+        RenderSystem.disableScissorForRenderTypeDraws();
     }
 
     // --- Draw methods used by GUI element classes ---
@@ -50,7 +51,7 @@ public class RenderHelper {
         if (lastBoundTexture != null) {
             // u/v are in normalized 0-1 range from the old code. Convert to pixel coords for blit.
             // The old code passes u/v as fractions of texture size.
-            guiGraphics.blit(lastBoundTexture, (int) x, (int) y, (float) (u * 256), (float) (v * 256), (int) w, (int) h, 256, 256);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, lastBoundTexture, (int) x, (int) y, (float) (u * 256), (float) (v * 256), (int) w, (int) h, 256, 256);
         }
     }
 
@@ -76,28 +77,28 @@ public class RenderHelper {
     // --- Colour drawing ---
 
     public static void drawColour(GuiGraphics guiGraphics, int colour, int alpha, double x, double y, double w, double h, double z) {
-        guiGraphics.fill((int) x, (int) y, (int) (x + w), (int) (y + h), (alpha << 24) | (colour & 0xFFFFFF));
+        guiGraphics.fill((int) x, (int) y, (int) (x + w), (int) (y + h), net.minecraft.util.ARGB.color(alpha, (colour >> 16) & 0xFF, (colour >> 8) & 0xFF, colour & 0xFF));
     }
 
     public static void drawColour(GuiGraphics guiGraphics, int r, int g, int b, int a, double x, double y, double w, double h, double z) {
-        guiGraphics.fill((int) x, (int) y, (int) (x + w), (int) (y + h), (a << 24) | (r << 16) | (g << 8) | b);
+        guiGraphics.fill((int) x, (int) y, (int) (x + w), (int) (y + h), net.minecraft.util.ARGB.color(a, r, g, b));
     }
 
     // --- Texture drawing ---
 
     public static void drawTexture(GuiGraphics guiGraphics, ResourceLocation loc, double x, double y, double w, double h, double z) {
-        guiGraphics.blit(loc, (int) x, (int) y, 0, 0, (int) w, (int) h, (int) w, (int) h);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, loc, (int) x, (int) y, 0, 0, (int) w, (int) h, (int) w, (int) h);
     }
 
     public static void drawTexture(GuiGraphics guiGraphics, ResourceLocation loc, double x, double y, double w, double h, double z, double u, double v, double uw, double vh) {
-        guiGraphics.blit(loc, (int) x, (int) y, (float) u, (float) v, (int) w, (int) h, (int) uw, (int) vh);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, loc, (int) x, (int) y, (float) u, (float) v, (int) w, (int) h, (int) uw, (int) vh);
     }
 
     // --- Framebuffer management ---
 
     public static RenderTarget createFrameBuffer() {
         Minecraft mc = Minecraft.getInstance();
-        TextureTarget render = new TextureTarget(mc.getWindow().getWidth(), mc.getWindow().getHeight(), true, Minecraft.ON_OSX);
+        TextureTarget render = new TextureTarget("ichunutil_framebuffer", mc.getWindow().getWidth(), mc.getWindow().getHeight(), true);
         frameBuffers.add(render);
         return render;
     }
@@ -118,12 +119,9 @@ public class RenderHelper {
         Matrix4f destP = new Matrix4f(prevP).lerp(nextP, prog);
         Matrix3f destN = new Matrix3f(prevN).lerp(nextN, prog);
 
-        try {
-            java.lang.reflect.Constructor<PoseStack.Pose> constructor = PoseStack.Pose.class.getDeclaredConstructor(Matrix4f.class, Matrix3f.class);
-            constructor.setAccessible(true);
-            return constructor.newInstance(destP, destN);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create PoseStack.Pose", e);
-        }
+        PoseStack.Pose pose = new PoseStack.Pose();
+        pose.pose().set(destP);
+        pose.normal().set(destN);
+        return pose;
     }
 }

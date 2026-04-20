@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.horse.AbstractHorseEntity",
+  "forClass": "net.minecraft.world.entity.animal.horse.AbstractHorse",
   "modifiers": [
     {
       "key": "SaddleItem",

@@ -6,6 +6,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.NonNullList;
+import me.ichun.mods.morph.mixin.InventoryAccessor;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
@@ -128,7 +130,7 @@ public class MorphState implements Comparable<MorphState>
 
     public void read(CompoundTag tag)
     {
-        variant = MorphVariant.createFromNBT(tag.getCompound("variant"));
+        variant = MorphVariant.createFromNBT(tag.getCompound("variant").orElse(new net.minecraft.nbt.CompoundTag()));
     }
 
     @Override
@@ -159,7 +161,9 @@ public class MorphState implements Comparable<MorphState>
     {
         living.tickCount = player.tickCount;
 
-        living.absMoveTo(player.getX(), player.getY(), player.getZ(), player.getYRot(), player.getXRot());
+        living.setPos(player.getX(), player.getY(), player.getZ());
+        living.setYRot(player.getYRot());
+        living.setXRot(player.getXRot());
         living.xo = player.xo;
         living.yo = player.yo;
         living.zo = player.zo;
@@ -251,22 +255,19 @@ public class MorphState implements Comparable<MorphState>
     {
         if(living instanceof Player)
         {
-            Player Player = (Player)living;
+            Player playerEnt = (Player)living;
 
+            InventoryAccessor inv = (InventoryAccessor)playerEnt.getInventory();
             for(EquipmentSlot value : EquipmentSlot.values())
             {
                 boolean shouldReset = reset && (value == EquipmentSlot.MAINHAND || value == EquipmentSlot.OFFHAND);
-                if(!ItemStack.isSameItemSameComponents(living.getItemBySlot(value), shouldReset ? ItemStack.EMPTY : player.getItemBySlot(value)))
-                {
                     ItemStack copy = shouldReset ? ItemStack.EMPTY : player.getItemBySlot(value).copy();
                     if (value == EquipmentSlot.MAINHAND) {
-                        Player.getInventory().items.set(Player.getInventory().selected, copy);
-                    } else if (value == EquipmentSlot.OFFHAND) {
-                        Player.getInventory().offhand.set(0, copy);
-                    } else if (value.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
-                        Player.getInventory().armor.set(value.getIndex(), copy);
+                        inv.getItems().set(inv.getSelected(), copy);
+                    } else {
+                        // In 1.21.8, armor and offhand are managed by EntityEquipment
+                        inv.getEquipment().set(value, copy);
                     }
-                }
             }
         }
         else

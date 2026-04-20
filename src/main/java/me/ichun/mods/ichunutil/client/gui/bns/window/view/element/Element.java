@@ -1,6 +1,7 @@
 package me.ichun.mods.ichunutil.client.gui.bns.window.view.element;
 
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
 import me.ichun.mods.ichunutil.client.gui.bns.window.Fragment;
 import me.ichun.mods.ichunutil.client.render.RenderHelper;
 import net.minecraft.client.Minecraft;
@@ -99,7 +100,7 @@ public abstract class Element<P extends Fragment> extends Fragment<P> //TODO han
     public static void renderMinecraftStyleButton(GuiGraphics guiGraphics, int posX, int posY, int width, int height, ButtonState state, int minecraftStyle) // BUTTONS NEED TO BE LARGER THAN 3x3
     {
         // Bind texture and render using GuiGraphics
-        guiGraphics.blit(minecraftStyle == 2 ? VANILLA_WIDGETS : WIDGETS, posX, posY, 0, state == ButtonState.CLICK ? 0 : state == ButtonState.HOVER ? 40 : 20, width, height);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, minecraftStyle == 2 ? VANILLA_WIDGETS : WIDGETS, posX, posY, 0F, state == ButtonState.CLICK ? 0F : state == ButtonState.HOVER ? 40F : 20F, width, height, 256, 256);
     }
 
     public static void cropAndStitch(GuiGraphics guiGraphics, int posX, int posY, int width, int height, int borderSize, double u, double v, int uLength, int vLength, double texWidth, double texHeight)

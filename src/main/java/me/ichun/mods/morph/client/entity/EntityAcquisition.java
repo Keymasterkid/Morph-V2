@@ -50,12 +50,23 @@ public class EntityAcquisition extends Entity
 
     public MorphRenderHandler.ModelPartCapture acquiredCapture = new MorphRenderHandler.ModelPartCapture();
 
-    public EntityAcquisition(EntityType<?> entityTypeIn, Level levelIn)
+    public EntityAcquisition(EntityType<? extends EntityAcquisition> entityTypeIn, Level levelIn, net.minecraft.world.entity.EntitySpawnReason spawnReason)
     {
         super(entityTypeIn, levelIn);
         setInvisible(true);
         setInvulnerable(true);
         this.setId(ClientEntityTracker.getNextEntId());
+    }
+
+    public EntityAcquisition(EntityType<? extends EntityAcquisition> entityTypeIn, Level levelIn)
+    {
+        this(entityTypeIn, levelIn, net.minecraft.world.entity.EntitySpawnReason.LOAD);
+    }
+
+    @Override
+    public boolean hurtServer(net.minecraft.server.level.ServerLevel level, net.minecraft.world.damagesource.DamageSource source, float amount)
+    {
+        return false;
     }
 
     public EntityAcquisition setTargets(@Nonnull LivingEntity origin, @Nonnull LivingEntity acquired, boolean isMorphAcquisition)
@@ -218,10 +229,10 @@ public class EntityAcquisition extends Entity
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag compound){}
+    protected void readAdditionalSaveData(net.minecraft.world.level.storage.ValueInput input){}
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag compound){}
+    protected void addAdditionalSaveData(net.minecraft.world.level.storage.ValueOutput output){}
 
     @Override
     public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity)
@@ -681,7 +692,8 @@ public class EntityAcquisition extends Entity
                             PoseStack.Pose last = matrixStack.last();
                             last.pose().mul(e.pose());
                             last.normal().mul(e.normal());
-                            info.createAndRender(matrixStack, vertexBuilder, light, overlay, 1F, 1F, 1F, alpha);
+                            int captureColor = net.minecraft.util.ARGB.color((int)(alpha * 255F), 255, 255, 255);
+                            info.createAndRender(matrixStack, vertexBuilder, light, overlay, captureColor);
                             matrixStack.popPose();
                         }
                     }

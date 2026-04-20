@@ -36,8 +36,8 @@ public class WorkspaceMobData extends Workspace
     {
         super.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
 
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        // RenderSystem.enableBlend();
+        // RenderSystem.defaultBlendFunc();
     }
 
     @Override

@@ -85,9 +85,9 @@ public class ElementScrollView extends ElementFertile
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick)
     {
-        setScissor();
+        setScissor(guiGraphics);
         elements.forEach(item -> item.render(guiGraphics, mouseX, mouseY, partialTick));
-        resetScissorToParent();
+        resetScissorToParent(guiGraphics);
     }
 
     

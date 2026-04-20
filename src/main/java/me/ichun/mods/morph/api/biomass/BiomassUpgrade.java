@@ -74,10 +74,10 @@ public class BiomassUpgrade
     {
         if(tag.contains("mobId"))
         {
-            mobId = tag.getString("mobId");
+            mobId = tag.getString("mobId").orElse("");
         }
-        id = tag.getString("id");
-        level = tag.getInt("level");
+        id = tag.getString("id").orElse("");
+        level = tag.getInt("level").orElse(0);
 
         updateUpgradeInfo();
     }

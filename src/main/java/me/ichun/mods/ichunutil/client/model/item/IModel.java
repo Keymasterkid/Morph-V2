@@ -9,7 +9,7 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 
 import javax.annotation.Nullable;
 
-public interface IModel //has to extend BlockEntityWithoutLevelRenderer!
+public interface IModel
 {
     default boolean isDualHanded() { return true; }
 

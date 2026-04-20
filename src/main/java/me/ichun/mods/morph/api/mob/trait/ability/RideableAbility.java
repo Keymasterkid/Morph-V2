@@ -3,8 +3,8 @@ package me.ichun.mods.morph.api.mob.trait.ability;
 import me.ichun.mods.morph.api.mob.trait.IEventBusRequired;
 import me.ichun.mods.morph.api.mob.trait.Trait;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.Equipable;
-import net.minecraft.world.entity.Saddleable;
+// import net.minecraft.world.item.Equipable;
+// import net.minecraft.world.entity.Saddleable;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.protocol.game.ClientboundSetPassengersPacket;
 import net.minecraft.world.InteractionResult;
@@ -70,7 +70,7 @@ public class RideableAbility extends Ability<RideableAbility>
     {
         if(lastStrength == 1F && event.getEntity().getVehicle() == null && event.getTarget() == player && event.getTarget().getPassengers().isEmpty())
         {
-            if((!(requiresSaddle != null && requiresSaddle) || (livingInstance instanceof Saddleable && ((Saddleable)livingInstance).isSaddled())) && event.getEntity().startRiding(player))
+            if((!(requiresSaddle != null && requiresSaddle) || isSaddleableHack(livingInstance)) && event.getEntity().startRiding(player))
             {
                 event.setCancellationResult(InteractionResult.SUCCESS);
                 event.setCanceled(true);
@@ -82,6 +82,15 @@ public class RideableAbility extends Ability<RideableAbility>
                     targetPlayer.connection.send(new ClientboundSetPassengersPacket(targetPlayer));
                 }
             }
+        }
+    }
+
+    private boolean isSaddleableHack(Entity livingInstance) {
+        try {
+            java.lang.reflect.Method m = livingInstance.getClass().getMethod("isSaddled");
+            return (boolean) m.invoke(livingInstance);
+        } catch (Exception e) {
+            return false; // Can't find saddle method
         }
     }
 }

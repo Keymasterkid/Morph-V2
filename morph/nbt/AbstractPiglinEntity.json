@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.monster.piglin.AbstractPiglinEntity",
+  "forClass": "net.minecraft.world.entity.monster.piglin.AbstractPiglin",
   "modifiers": [
     {
       "key": "IsImmuneToZombification",

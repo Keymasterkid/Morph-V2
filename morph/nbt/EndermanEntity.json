@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.monster.EndermanEntity",
+  "forClass": "net.minecraft.world.entity.monster.EnderMan",
   "modifiers": [
     {
       "key": "carriedBlockState",

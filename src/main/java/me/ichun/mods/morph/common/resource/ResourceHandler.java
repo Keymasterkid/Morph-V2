@@ -78,7 +78,7 @@ public class ResourceHandler
         NbtHandler.loadNbtModifiers();
 
         if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
-            // me.ichun.mods.morph.client.render.hand.HandHandler.loadInteractionHandInfos();
+            me.ichun.mods.morph.client.render.hand.HandHandler.loadHandInfos();
         }
 
         //This data rely on entity type resource location

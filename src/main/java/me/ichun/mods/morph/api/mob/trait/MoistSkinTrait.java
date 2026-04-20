@@ -39,7 +39,7 @@ public class MoistSkinTrait extends Trait<MoistSkinTrait>
             moistness = maxMoistness;
         }
 
-        if (player.isInWaterRainOrBubble())
+        if (player.isInWaterOrRain())
         {
             moistness = maxMoistness;
         }

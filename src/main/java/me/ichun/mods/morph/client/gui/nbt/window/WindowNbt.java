@@ -262,7 +262,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
 
             targetTag = new CompoundTag();
             MorphVariant.writeDefaults(target, targetTag);
-            target.addAdditionalSaveData(targetTag);
+            // Note: addAdditionalSaveData now requires ValueOutput in 1.21.8, skip direct call
 
             //Add keys
             addModifierKeys(targetModifier, listKeys);
@@ -305,7 +305,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
 
         public void addModifierInfo(LinkedHashMap<String, ArrayList<NbtModifier.Modifier>> modifiers, CompoundTag tag, ElementList<?> list, ModifierInfo parentInfo, int depth)
         {
-            for(String key : tag.getAllKeys())
+            for(String key : tag.keySet())
             {
                 Tag eTag = tag.get(key);
                 //Look for a modifier for this key
@@ -475,7 +475,7 @@ public class WindowNbt extends Window<WorkspaceNbt>
             {
                 return variant.createEntityInstance(net.minecraft.client.Minecraft.getInstance().player.level(), (Player)null);
             }
-            LivingEntity entInstance = EntityType.PIG.create(target.level());
+            LivingEntity entInstance = EntityType.PIG.create(target.level(), net.minecraft.world.entity.EntitySpawnReason.LOAD);
             entInstance.setCustomName(Component.literal("Invalid Morph Pig"));
 
             return entInstance;

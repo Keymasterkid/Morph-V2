@@ -143,7 +143,7 @@ public class WindowMobData extends Window<WorkspaceMobData>
                         ElementList.Item<MorphVariant> item = listMorphs.addItem(morph);
 
                         MorphVariant renderVariant = morph.getAsVariant(morph.variants.get(0));
-                        EntityType<?> value = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(renderVariant.id);
+                        EntityType<?> value = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getOptional(renderVariant.id).orElse(null);
                         String key = value != null ? value.getDescriptionId() : "morph.morph.type.unknown";
                         ElementRenderEntity rend = new ElementRenderEntity(item, 0.5F);
                         rend.setSize(40, 40);
@@ -260,7 +260,7 @@ public class WindowMobData extends Window<WorkspaceMobData>
         public void updateTraitsList()
         {
             String morphId = selectedMobData != null ? selectedMobData.forEntity : "minecraft:pig";
-            EntityType<?> value = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.get(ResourceLocation.parse(morphId));
+            EntityType<?> value = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getOptional(ResourceLocation.parse(morphId)).orElse(null);
             String key = value != null ? value.getDescriptionId() : "morph.morph.type.unknown";
 
             ((ElementTextWrapper)getById("textMorphId")).setText(I18n.get(key));

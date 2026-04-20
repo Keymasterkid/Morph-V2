@@ -1,5 +1,5 @@
 {
-  "forClass": "net.minecraft.entity.passive.StriderEntity",
+  "forClass": "net.minecraft.world.entity.monster.Strider",
   "modifiers": [
     {
       "key": "Saddle",

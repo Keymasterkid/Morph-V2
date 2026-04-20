@@ -19,7 +19,7 @@ public class ModelTabula extends Model
 
     public ModelTabula(Project project)
     {
-        super(rl -> RenderType.entityCutoutNoCull(rl));
+        super(null, net.minecraft.client.renderer.RenderType::entityCutout);
         this.project = project;
     }
 
@@ -29,8 +29,7 @@ public class ModelTabula extends Model
         project.parts.forEach(part -> models.add(ModelHelper.createModelPart(part, true)));
     }
 
-    @Override
-    public void renderToBuffer(PoseStack matrixStack, VertexConsumer buffer, int light, int overlay, int color)
+    public void renderTabula(PoseStack matrixStack, VertexConsumer buffer, int light, int overlay, int color)
     {
         if(isDirty)
         {

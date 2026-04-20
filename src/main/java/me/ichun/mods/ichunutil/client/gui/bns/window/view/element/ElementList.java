@@ -201,7 +201,7 @@ public class ElementList<P extends Fragment> extends ElementFertile<P>
             }
         }
 
-        setScissor();
+        setScissor(guiGraphics);
         items.forEach(item -> item.render(guiGraphics, mouseX, mouseY, partialTick));
 
         if(getFocused() instanceof Item)
@@ -209,7 +209,7 @@ public class ElementList<P extends Fragment> extends ElementFertile<P>
             ((Item<?>)getFocused()).render(guiGraphics, mouseX, mouseY, partialTick);
         }
 
-        resetScissorToParent();
+        resetScissorToParent(guiGraphics);
     }
 
     public Item<?> getItemAt(double mouseX, double mouseY)
@@ -447,9 +447,9 @@ public class ElementList<P extends Fragment> extends ElementFertile<P>
     }
 
     
-    public void setScissor()
+    public void setScissor(GuiGraphics guiGraphics)
     {
-        RenderHelper.startGlScissor(getLeft() + 1, getTop() + 1, width - 2, height - 2);
+        guiGraphics.enableScissor(getLeft() + 1, getTop() + 1, getRight() - 1, getBottom() - 1);
     }
 
     
@@ -612,10 +612,10 @@ public class ElementList<P extends Fragment> extends ElementFertile<P>
 
                 if(draggingUs)
                 {
-                    guiGraphics.pose().pushPose();
+                    guiGraphics.pose().pushMatrix();
                     double x = (mouseX - pos.x);
                     double y = (mouseY - pos.y);
-                    guiGraphics.pose().translate((float)x, (float)y, 0F);
+                    guiGraphics.pose().translate((float)((float)x), (float)((float)y));
                 }
 
                 if(renderMinecraftStyle() > 0)
@@ -697,7 +697,7 @@ public class ElementList<P extends Fragment> extends ElementFertile<P>
 
                 if(draggingUs)
                 {
-                    guiGraphics.pose().popPose();
+                    guiGraphics.pose().popMatrix();
                 }
             }
         }

@@ -16,6 +16,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,10 +27,19 @@ public class NbtHandler
     public static final HashMap<Class<? extends LivingEntity>, NbtModifier> NBT_MODIFIERS = new HashMap<>();
     public static final HashMap<Class<?>, NbtModifier> NBT_MODIFIERS_INTERFACES = new HashMap<>();
 
+    private enum NbtJsonLoadResult
+    {
+        SUCCESS,
+        MISSING_FOR_CLASS,
+        UNRESOLVED_CLASS
+    }
+
     public static void loadNbtModifiers()
     {
         NBT_MODIFIERS.clear();
         NBT_MODIFIERS_INTERFACES.clear();
+
+        AtomicInteger skippedUnresolved = new AtomicInteger(0);
 
         //        serialiseModifiers();
 
@@ -42,22 +52,24 @@ public class NbtHandler
                     try
                     {
                         String json = FileUtils.readFileToString(file, "UTF-8");
-                        if(readNbtJson(json))
+                        NbtJsonLoadResult result = readNbtJson(json, file.toPath(), skippedUnresolved);
+                        if(result == NbtJsonLoadResult.SUCCESS)
                         {
                             return true;
                         }
-                        else
+                        if(result == NbtJsonLoadResult.MISSING_FOR_CLASS)
                         {
-                            Morph.LOGGER.error("Error reading NBT Modifier file, no forClass: {}", file);
+                            Morph.LOGGER.error("Error reading NBT Modifier file, missing or empty forClass: {}", file);
                             return false;
                         }
+                        // UNRESOLVED_CLASS: optional mod / wrong classpath; already counted and logged at DEBUG in readNbtJson
+                        return false;
                     }
                     catch(IOException | JsonSyntaxException | IllegalStateException e)
                     {
                         Morph.LOGGER.error("Error reading NBT Modifier file: {}", file);
                         e.printStackTrace();
                     }
-                    catch(ClassNotFoundException ignored){}
                 }
                 return false;
             });
@@ -67,6 +79,12 @@ public class NbtHandler
             Morph.LOGGER.error("Error loading NBT Modifier files.", e);
         }
 
+        int skipped = skippedUnresolved.get();
+        if(skipped > 0)
+        {
+            Morph.LOGGER.info("Skipped {} NBT modifier file(s) (forClass not on classpath)", skipped);
+        }
+
         Morph.LOGGER.info("Loaded {} NBT Modifier(s)", NBT_MODIFIERS.size() + NBT_MODIFIERS_INTERFACES.size());
 
         setupInterfaceModifiers();
@@ -74,13 +92,18 @@ public class NbtHandler
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new MorphLoadResourceEvent(MorphLoadResourceEvent.Type.NBT));
     }
 
-    private static boolean readNbtJson(String json) throws ClassNotFoundException, JsonSyntaxException, IllegalStateException
+    private static NbtJsonLoadResult readNbtJson(String json, Path sourcePath, AtomicInteger skippedUnresolved) throws JsonSyntaxException, IllegalStateException
     {
         JsonParser parser = new JsonParser();
         JsonObject jsonObject = parser.parse(json).getAsJsonObject();
         if(jsonObject.has("forClass"))
         {
-            String className = jsonObject.get("forClass").getAsString();
+            String rawForClass = jsonObject.get("forClass").getAsString();
+            if(rawForClass == null || rawForClass.isBlank())
+            {
+                return NbtJsonLoadResult.MISSING_FOR_CLASS;
+            }
+            String className = rawForClass;
 
             // 1.16 backwards compatibility mapping for MCP to Mojmap
             if (className.startsWith("net.minecraft.entity.")) {
@@ -114,11 +137,64 @@ public class NbtHandler
                 }
             }
 
-            Class clz = Class.forName(className);
+            Class clz = null;
+            // Try multiple strategies to resolve the class name
+            // Strategy 1: Direct Class.forName
+            try {
+                clz = Class.forName(className);
+            } catch (ClassNotFoundException e1) {
+                // Strategy 2: Try context classloader
+                try {
+                    clz = Class.forName(className, false, Thread.currentThread().getContextClassLoader());
+                } catch (ClassNotFoundException e2) {
+                    // ignored, try next strategy
+                }
+            }
+
+            // Strategy 3: In 1.21.8+, Mojang moved many entities into subpackages
+            // e.g. animal.Sheep → animal.sheep.Sheep, monster.Creeper → monster.creeper.Creeper
+            if (clz == null) {
+                String simpleName = className.substring(className.lastIndexOf('.') + 1);
+                String packageName = className.substring(0, className.lastIndexOf('.'));
+                String subPackageName = packageName + "." + simpleName.toLowerCase(java.util.Locale.ROOT) + "." + simpleName;
+                try {
+                    clz = Class.forName(subPackageName);
+                } catch (ClassNotFoundException e3) {
+                    try {
+                        clz = Class.forName(subPackageName, false, Thread.currentThread().getContextClassLoader());
+                    } catch (ClassNotFoundException e4) {
+                        // ignored, try next strategy
+                    }
+                }
+            }
+
+            // Strategy 4: Search entity registry by simple name
+            if (clz == null) {
+                String simpleName = className.substring(className.lastIndexOf('.') + 1);
+                for (net.minecraft.world.entity.EntityType<?> type : net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE) {
+                    try {
+                        // Try to get the class via the entity type's factory by checking known classes
+                        Class<?> typeClass = type.getBaseClass();
+                        if (typeClass != null && typeClass.getSimpleName().equals(simpleName)) {
+                            clz = typeClass;
+                            break;
+                        }
+                    } catch (Throwable t) {
+                        // getBaseClass may not exist in this version, ignore
+                    }
+                }
+            }
+
+            if (clz == null) {
+                skippedUnresolved.incrementAndGet();
+                Morph.LOGGER.warn("NBT Modifier skipped (class not on classpath): {} forClass={} resolvedName={}",
+                    sourcePath, rawForClass, className);
+                return NbtJsonLoadResult.UNRESOLVED_CLASS;
+            }
 
             boolean forInterface = jsonObject.has("isInterface") && jsonObject.get("isInterface").getAsBoolean();
 
-            if(!forInterface && NBT_MODIFIERS.containsKey(clz) || forInterface && NBT_MODIFIERS_INTERFACES.containsKey(clz))
+            if((!forInterface && NBT_MODIFIERS.containsKey(clz)) || (forInterface && NBT_MODIFIERS_INTERFACES.containsKey(clz)))
             {
                 Morph.LOGGER.warn("We already have another NBT Modifier for {}", clz.getName());
             }
@@ -140,9 +216,9 @@ public class NbtHandler
                 Morph.LOGGER.error("Error deserialising NBT Modifier for {}", clz.getName());
                 t.printStackTrace();
             }
-            return true;
+            return NbtJsonLoadResult.SUCCESS;
         }
-        return false;
+        return NbtJsonLoadResult.MISSING_FOR_CLASS;
     }
 
     private static void serialiseModifiers()
@@ -200,7 +276,8 @@ public class NbtHandler
     public static NbtModifier getModifierFor(Class clz)
     {
         NbtModifier modifier;
-        if(NBT_MODIFIERS.containsKey(clz))
+        boolean wasInMap = NBT_MODIFIERS.containsKey(clz);
+        if(wasInMap)
         {
             modifier = NBT_MODIFIERS.get(clz);
             if(modifier.toKeep != null) // it's been set up;
@@ -256,7 +333,7 @@ public class NbtHandler
     public static void removeEmptyCompoundTags(CompoundTag tag)
     {
         java.util.List<String> toRemove = new java.util.ArrayList<>();
-        tag.getAllKeys().forEach(k -> {
+        tag.keySet().forEach(k -> {
             net.minecraft.nbt.Tag val = tag.get(k);
             if(val instanceof CompoundTag child) {
                 removeEmptyCompoundTags(child);

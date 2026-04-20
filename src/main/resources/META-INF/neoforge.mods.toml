@@ -16,11 +16,11 @@ issueTrackerURL="https://github.com/Keymasterkid/Morph-V2/issues"
 
 [[mods]]
     modId="ichunutil"
-    version="0.1.0" #mandatory
+    version="0.3.0" #mandatory
     displayName="iChunUtil"
     authors="iChun, OG69 Dev™"
     description='''
-    A library mod used by iChun's mods.
+    A library mod used by iChun''s mods.
     '''
 
 
