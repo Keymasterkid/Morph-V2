@@ -9,6 +9,11 @@
     },
     {
       "type": "abilityFlight"
+    },
+    {
+      "type": "abilityFireball",
+      "isLarge": true,
+      "cooldown": 60
     }
   ]
 }

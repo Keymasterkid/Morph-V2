@@ -167,6 +167,11 @@ public class HudHandler {
                 || keyBind == KeyBinds.keyFavourite) {
             handleMorphInput(keyBind, isReleased);
         }
+        else if (keyBind == KeyBinds.keyAbility) {
+            if(!showSelector && !showRadial) {
+                Morph.channel.sendToServer(new me.ichun.mods.morph.common.packet.PacketAbility(!isReleased));
+            }
+        }
         //TODO disabled because too many people asking stupid questions
 //        else if(keyBind == KeyBinds.keyBiomass)
 //        {

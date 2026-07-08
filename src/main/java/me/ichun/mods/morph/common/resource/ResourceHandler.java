@@ -26,7 +26,7 @@ public class ResourceHandler
             .registerTypeAdapter(Trait.class, new TraitHandler.TraitDeserialiser())
             .setPrettyPrinting().disableHtmlEscaping().create();
     public static final Gson GSON_MINIFY = new GsonBuilder().disableHtmlEscaping().create();
-    public static final int MOB_SUPPORT_VERSION = 2;
+    public static final int MOB_SUPPORT_VERSION = 3;
 
 
     private static Path morphDir;

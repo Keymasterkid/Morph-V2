@@ -30,6 +30,10 @@ public abstract class Ability<T extends Ability> extends Trait<T>
         return false;
     }
 
+    public void onAction(boolean isDown)
+    {
+    }
+
     @Override
     public boolean isAbility()
     {

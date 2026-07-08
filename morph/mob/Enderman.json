@@ -6,6 +6,10 @@
     },
     {
       "type": "traitWaterSensitivity"
+    },
+    {
+      "type": "abilityTeleport",
+      "distance": 32.0
     }
   ]
 }

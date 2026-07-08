@@ -13,6 +13,7 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 public class MobEffectAttackAbility extends Ability<MobEffectAttackAbility>
         implements IEventBusRequired
 {
+    @com.google.gson.annotations.SerializedName("effectId")
     public String MobEffectId;
     public Integer duration;
     public Integer amplifier;

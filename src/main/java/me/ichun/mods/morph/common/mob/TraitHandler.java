@@ -44,6 +44,8 @@ public class TraitHandler
         m.put("abilityFlightFlap", FlightFlapAbility.class);
         m.put("abilityRideable", RideableAbility.class);
         m.put("abilitySlowFall", SlowFallAbility.class);
+        m.put("abilityTeleport", TeleportAbility.class);
+        m.put("abilityFireball", FireballAbility.class);
 
         // Alias for resistance
         m.put("traitEffectResistance", MobEffectResistanceTrait.class);

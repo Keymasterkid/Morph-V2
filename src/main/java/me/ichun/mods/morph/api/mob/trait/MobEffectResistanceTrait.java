@@ -11,6 +11,7 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 public class MobEffectResistanceTrait extends Trait<MobEffectResistanceTrait>
         implements IEventBusRequired
 {
+    @com.google.gson.annotations.SerializedName("effectId")
     public String MobEffectId;
 
     public transient MobEffect MobEffectObj;

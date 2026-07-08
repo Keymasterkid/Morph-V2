@@ -137,7 +137,8 @@ public class Morph
                 PacketUpdateBiomassValue.class,
                 PacketUpdateBiomassUpgrades.class,
                 PacketInvalidateClientHealth.class,
-                PacketOpenGenerator.class
+                PacketOpenGenerator.class,
+                PacketAbility.class
         );
         channel.registerWithBus(bus);
 
